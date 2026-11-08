@@ -1,15 +1,32 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-TW" class="h-full">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>步伴 CozyStep - 雙人散步與小窩培育</title>
+
+  <!-- PWA & Mobile Web Capabilities -->
+  <meta name="application-name" content="步伴 CozyStep">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="步伴">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#fb923c">
+
+  <!-- Self-Contained SVG App Icon for iOS & Android -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='128' fill='%23fb923c'/%3E%3Cellipse cx='256' cy='310' rx='95' ry='75' fill='%23ffffff'/%3E%3Cellipse cx='165' cy='200' rx='32' ry='44' transform='rotate(-18 165 200)' fill='%23ffffff'/%3E%3Cellipse cx='225' cy='165' rx='34' ry='46' transform='rotate(-6 225 165)' fill='%23ffffff'/%3E%3Cellipse cx='287' cy='165' rx='34' ry='46' transform='rotate(6 287 165)' fill='%23ffffff'/%3E%3Cellipse cx='347' cy='200' rx='32' ry='44' transform='rotate(18 347 200)' fill='%23ffffff'/%3E%3C/svg%3E">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='128' fill='%23fb923c'/%3E%3Cellipse cx='256' cy='310' rx='95' ry='75' fill='%23ffffff'/%3E%3Cellipse cx='165' cy='200' rx='32' ry='44' transform='rotate(-18 165 200)' fill='%23ffffff'/%3E%3Cellipse cx='225' cy='165' rx='34' ry='46' transform='rotate(-6 225 165)' fill='%23ffffff'/%3E%3Cellipse cx='287' cy='165' rx='34' ry='46' transform='rotate(6 287 165)' fill='%23ffffff'/%3E%3Cellipse cx='347' cy='200' rx='32' ry='44' transform='rotate(18 347 200)' fill='%23ffffff'/%3E%3C/svg%3E">
+
+  <!-- Self-Contained Relative PWA Web Manifest (Strictly Bound to Subpaths for GitHub Pages) -->
+  <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22%E6%AD%A5%E4%BC%B4%20CozyStep%22%2C%22short_name%22%3A%22%E6%AD%A5%E4%BC%B4%22%2C%22description%22%3A%22%E9%9B%99%E4%BA%BA%E6%95%A3%E6%AD%A5%E8%88%87%E5%B0%8F%E7%AA%A9%E5%9F%B9%E8%82%B2%22%2C%22start_url%22%3A%22.%2F%22%2C%22scope%22%3A%22.%2F%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%2C%22background_color%22%3A%22%23f8f5f0%22%2C%22theme_color%22%3A%22%23fb923c%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%20512%20512'%253E%253Crect%20width%3D'512'%20height%3D'512'%20rx%3D'128'%20fill%3D'%2523fb923c'%2F%253E%253Cellipse%20cx%3D'256'%20cy%3D'310'%20rx%3D'95'%20ry%3D'75'%20fill%3D'%2523ffffff'%2F%253E%253Cellipse%20cx%3D'165'%20cy%3D'200'%20rx%3D'32'%20ry%3D'44'%20transform%3D'rotate(-18%20165%20200)'%20fill%3D'%2523ffffff'%2F%253E%253Cellipse%20cx%3D'225'%20cy%3D'165'%20rx%3D'34'%20ry%3D'46'%20transform%3D'rotate(-6%20225%20165)'%20fill%3D'%2523ffffff'%2F%253E%253Cellipse%20cx%3D'287'%20cy%3D'165'%20rx%3D'34'%20ry%3D'46'%20transform%3D'rotate(6%20287%20165)'%20fill%3D'%2523ffffff'%2F%253E%253Cellipse%20cx%3D'347'%20cy%3D'200'%20rx%3D'32'%20ry%3D'44'%20transform%3D'rotate(18%20347%20200)'%20fill%3D'%2523ffffff'%2F%253E%253C%2Fsvg%253E%22%2C%22sizes%22%3A%22192x192%20512x512%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%2C%22purpose%22%3A%22any%20maskable%22%7D%5D%7D">
+
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <!-- html2canvas for Screenshot Sharing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
   <script>
     tailwind.config = {
       theme: {
@@ -88,11 +105,10 @@
     .unread-memory-glow {
       animation: memory-glow 2.4s ease-in-out infinite;
     }
-    /* Sticker outline styles: 徹底移除白邊光暈，純淨透明無白線 */
+    /* Sticker outline styles */
     .sticker-with-border {
       filter: drop-shadow(0 2px 5px rgba(0,0,0,0.2)) drop-shadow(0 0 1.5px #ffffff) drop-shadow(0 0 2px #ffffff);
     }
-    /* 乾淨剪裁：純透明無痕邊界，絕無任何白色邊框與白光暈線條 */
     .sticker-no-border {
       filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.16));
     }
@@ -246,9 +262,7 @@
         <h3 class="text-xs font-bold text-stone-500 uppercase tracking-wider">我的貼圖 (<span id="stickerCount">0</span>)</h3>
       </div>
 
-      <div id="stickerGrid" class="grid grid-cols-2 gap-2.5">
-        <!-- Populated dynamically -->
-      </div>
+      <div id="stickerGrid" class="grid grid-cols-2 gap-2.5"></div>
     </section>
 
     <!-- TAB 3: 共同佈置小窩 (COZY ROOM) -->
@@ -268,7 +282,7 @@
         </div>
       </div>
 
-      <!-- Compact Single-Row Toolbar (極簡一排設計，移除清空) -->
+      <!-- Compact Single-Row Toolbar -->
       <div class="px-3 py-1.5 bg-white border-b border-stone-200 flex items-center justify-between text-xs shrink-0">
         <button onclick="openRoomManagerModal()" class="flex items-center space-x-1 font-bold text-stone-800 bg-stone-50 hover:bg-stone-100 border border-stone-200 px-2 py-1 rounded-xl active:scale-95 transition max-w-[120px] truncate">
           <span id="roomTitleDisplay" class="truncate">甜蜜小窩</span>
@@ -326,9 +340,8 @@
             <span class="text-xl text-amber-400/80">☀️</span>
           </div>
 
-          <!-- Interactive Wall Calendar (小窩時光日曆：點開查閱所有日記) -->
+          <!-- Interactive Wall Calendar -->
           <div id="roomWallCalendar" onclick="openDiariesTimelineModal()" class="absolute top-16 right-36 w-24 bg-white border-2 border-stone-800 rounded-2xl shadow-md cursor-pointer hover:scale-105 active:scale-95 transition-transform z-10 flex flex-col overflow-hidden select-none group" title="點擊查看所有回憶日記">
-            <!-- Pin hanging ring -->
             <div class="absolute -top-1.5 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-stone-800 border border-white"></div>
             <div class="bg-stone-900 text-white text-[9px] font-bold text-center py-1 tracking-wider uppercase">
               <span id="calendarMonthText">11月</span>
@@ -341,8 +354,6 @@
               <span>📖 回憶時光</span>
             </div>
           </div>
-
-          <!-- Interactive Sticker and Furniture items will be appended into roomWorld -->
         </div>
       </div>
     </section>
@@ -366,7 +377,7 @@
   </nav>
 
   <!-- ======================================================== -->
-  <!-- MODAL: 查看物件回憶與日記 (ROOM OBJECT MEMORY INSPECTION & COMMENTS) -->
+  <!-- MODAL: 查看物件回憶與日記 -->
   <!-- ======================================================== -->
   <div id="memoryInspectModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-sm w-full p-4 shadow-2xl relative space-y-3 max-h-[92vh] flex flex-col overflow-hidden">
@@ -375,12 +386,10 @@
       </button>
 
       <div class="overflow-y-auto custom-scrollbar flex-1 space-y-3 pr-1">
-        <!-- Memory Sticker Image: 完全按照原始自然長寬比，不拉伸不壓縮 -->
         <div class="w-full bg-stone-50/80 rounded-2xl border border-stone-100 flex items-center justify-center p-2.5 overflow-hidden">
           <img id="inspectImg" src="" class="block max-w-full max-h-[50vh] w-auto h-auto object-contain rounded-xl shadow-sm" alt="回憶照片">
         </div>
 
-        <!-- Details -->
         <div class="space-y-1.5">
           <div class="flex items-center justify-between">
             <h4 id="inspectTitle" class="text-sm font-bold text-stone-800">記憶標題</h4>
@@ -392,12 +401,10 @@
           </div>
         </div>
 
-        <!-- Diary Passage -->
         <div class="bg-amber-50/60 border border-amber-200/80 rounded-2xl p-3 text-xs text-stone-700 leading-relaxed font-serif">
           <p id="inspectDiary" class="whitespace-pre-wrap">尚無日記紀錄。</p>
         </div>
 
-        <!-- Action for owner: Only Heart Recycling & Return (No Slider/Rotation clutter) -->
         <div id="inspectOwnerControls" class="flex items-center justify-between bg-stone-50 p-2.5 rounded-2xl border border-stone-200">
           <div class="text-[11px] text-stone-500">
             <span>👋 不想擺放了嗎？</span>
@@ -408,12 +415,10 @@
           </button>
         </div>
 
-        <!-- Partner Notice if not owner -->
         <div id="inspectNonOwnerNotice" class="hidden text-center p-2 rounded-xl bg-stone-100 text-stone-500 text-[11px]">
           🔒 這是對象佈置的回憶（可以在下方留言互動哦！）
         </div>
 
-        <!-- 6. DIARY COMMENTS / MESSAGE BOARD SECTION -->
         <div class="space-y-2 border-t border-stone-200 pt-3">
           <div class="flex items-center justify-between">
             <h5 class="text-xs font-bold text-stone-700 flex items-center space-x-1">
@@ -423,12 +428,8 @@
             <span class="text-[10px] text-stone-400">寫下給這段回憶的話</span>
           </div>
 
-          <!-- Comment list container -->
-          <div id="inspectCommentList" class="space-y-1.5 max-h-36 overflow-y-auto custom-scrollbar">
-            <!-- Rendered dynamically -->
-          </div>
+          <div id="inspectCommentList" class="space-y-1.5 max-h-36 overflow-y-auto custom-scrollbar"></div>
 
-          <!-- Add comment input form -->
           <div class="flex items-center space-x-1.5 pt-1">
             <input type="text" id="inspectNewCommentInput" placeholder="留下暖心悄悄話..." class="flex-1 text-xs py-1.5 px-2.5 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:border-brand-500">
             <button onclick="submitMemoryComment()" class="px-3 py-1.5 bg-brand-500 text-white font-bold rounded-xl text-xs shadow-sm active:scale-95 transition shrink-0">
@@ -436,13 +437,12 @@
             </button>
           </div>
         </div>
-
       </div>
     </div>
   </div>
 
   <!-- ======================================================== -->
-  <!-- MODAL: 自製手繪貼圖工坊 (STICKER CUTOUT & MEMORY CREATOR) -->
+  <!-- MODAL: 自製手繪貼圖工坊 -->
   <!-- ======================================================== -->
   <div id="imageEditorModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
     <div class="bg-white rounded-3xl max-w-sm w-full p-4 shadow-2xl flex flex-col max-h-[94vh] overflow-hidden space-y-3">
@@ -457,7 +457,6 @@
       </div>
 
       <div class="overflow-y-auto custom-scrollbar flex-1 space-y-3 pr-1">
-        <!-- Cutout Mode Selector -->
         <div class="grid grid-cols-2 gap-2 text-xs">
           <button id="modeDrawBtn" onclick="setCutoutMode('custom')" class="py-2 border-2 border-brand-500 bg-brand-50 text-brand-700 font-bold rounded-xl text-center active:scale-95 transition">
             ✏️ 手繪圈選摳圖
@@ -467,7 +466,6 @@
           </button>
         </div>
 
-        <!-- Drawing Canvas Area -->
         <div class="relative bg-stone-100 rounded-2xl overflow-hidden flex flex-col items-center justify-center border border-stone-200">
           <canvas id="cutoutCanvas" class="w-full aspect-square touch-none cursor-crosshair block bg-stone-900/5"></canvas>
           <div class="absolute bottom-2 left-2 right-2 flex justify-between items-center pointer-events-none">
@@ -480,7 +478,6 @@
           </div>
         </div>
 
-        <!-- White Border Toggle Option -->
         <div class="flex items-center justify-between p-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs">
           <div class="flex items-center space-x-1.5">
             <i data-lucide="scissors" class="w-4 h-4 text-brand-500"></i>
@@ -492,7 +489,6 @@
           </label>
         </div>
 
-        <!-- Memory Form Inputs -->
         <div class="space-y-2 text-xs">
           <div>
             <label class="font-bold text-stone-700 block mb-0.5">回憶標題</label>
@@ -509,7 +505,6 @@
         </div>
       </div>
 
-      <!-- Submit Button -->
       <div class="pt-2 border-t border-stone-100 shrink-0">
         <button onclick="finishStickerCrafting()" class="w-full py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-xl text-xs shadow-sm active:scale-95 transition flex items-center justify-center space-x-1">
           <i data-lucide="check" class="w-4 h-4"></i>
@@ -520,7 +515,7 @@
   </div>
 
   <!-- ======================================================== -->
-  <!-- MODAL: 多小窩管理員 (ROOM MANAGER & CREATOR) -->
+  <!-- MODAL: 多小窩管理員 -->
   <!-- ======================================================== -->
   <div id="roomManagerModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-sm w-full p-4 shadow-2xl flex flex-col max-h-[85vh]">
@@ -534,12 +529,8 @@
         </button>
       </div>
 
-      <!-- Room List -->
-      <div class="flex-1 overflow-y-auto custom-scrollbar space-y-2 mb-3 pr-1" id="roomsListContainer">
-        <!-- Rendered dynamically -->
-      </div>
+      <div class="flex-1 overflow-y-auto custom-scrollbar space-y-2 mb-3 pr-1" id="roomsListContainer"></div>
 
-      <!-- Create New Room Accordion / Button -->
       <div class="border-t border-stone-100 pt-3 space-y-2">
         <button onclick="toggleNewRoomForm()" class="w-full py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold rounded-xl text-xs flex items-center justify-center space-x-1 border border-amber-200 transition">
           <i data-lucide="plus-circle" class="w-4 h-4"></i>
@@ -569,7 +560,7 @@
   </div>
 
   <!-- ======================================================== -->
-  <!-- MODAL: 雙人小窩共享與同步 (ROOM SYNC & PEER SHARE) -->
+  <!-- MODAL: 雙人小窩共享與同步 -->
   <!-- ======================================================== -->
   <div id="syncDataModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-sm w-full p-4 shadow-2xl space-y-3">
@@ -616,7 +607,7 @@
   </div>
 
   <!-- ======================================================== -->
-  <!-- MODAL: 自訂壁紙與地板 (BACKGROUND THEME & TEXTURE CUSTOMIZER) -->
+  <!-- MODAL: 自訂壁紙與地板 -->
   <!-- ======================================================== -->
   <div id="bgThemeModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-sm w-full p-4 shadow-2xl space-y-4 max-h-[90vh] flex flex-col overflow-hidden">
@@ -631,7 +622,6 @@
       </div>
 
       <div class="overflow-y-auto custom-scrollbar flex-1 space-y-4 pr-1">
-        <!-- 1. Preset Themes -->
         <div>
           <label class="text-xs font-bold text-stone-700 block mb-2">精選裝潢風格</label>
           <div class="grid grid-cols-2 gap-2 text-xs">
@@ -654,7 +644,6 @@
           </div>
         </div>
 
-        <!-- 2. Custom Upload for Wallpaper -->
         <div class="p-3 bg-stone-50 border border-stone-200 rounded-2xl space-y-2">
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold text-stone-800 flex items-center">
@@ -670,7 +659,6 @@
           </label>
         </div>
 
-        <!-- 3. Custom Upload for Flooring -->
         <div class="p-3 bg-stone-50 border border-stone-200 rounded-2xl space-y-2">
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold text-stone-800 flex items-center">
@@ -696,7 +684,7 @@
   </div>
 
   <!-- ========================================== -->
-  <!-- MODAL: 雙人配對與連線 (PAIRING MODAL) -->
+  <!-- MODAL: 雙人配對與連線 -->
   <!-- ========================================== -->
   <div id="pairingModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-sm w-full p-4 shadow-2xl space-y-3">
@@ -733,7 +721,7 @@
   </div>
 
   <!-- ========================================== -->
-  <!-- MODAL: 截圖預覽與分享 (SCREENSHOT SHARING) -->
+  <!-- MODAL: 截圖預覽與分享 -->
   <!-- ========================================== -->
   <div id="screenshotModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-sm w-full p-4 shadow-2xl flex flex-col space-y-3 max-h-[92vh] overflow-hidden">
@@ -765,7 +753,7 @@
   </div>
 
   <!-- ======================================================== -->
-  <!-- MODAL: 小窩家具工坊 (FURNITURE CATALOG & COLOR SCHEMES) -->
+  <!-- MODAL: 小窩家具工坊 -->
   <!-- ======================================================== -->
   <div id="furnitureCatalogModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-sm w-full p-4 shadow-2xl flex flex-col max-h-[92vh] overflow-hidden space-y-3">
@@ -780,30 +768,24 @@
       </div>
 
       <div class="overflow-y-auto custom-scrollbar flex-1 space-y-3 pr-1">
-        <!-- Color Scheme Picker -->
         <div>
           <label class="text-[11px] font-bold text-stone-600 block mb-1.5">家具色系（搭配小窩裝潢）</label>
-          <div class="grid grid-cols-5 gap-1.5" id="furnitureColorPaletteContainer">
-            <!-- Dynamically populated colors -->
-          </div>
+          <div class="grid grid-cols-5 gap-1.5" id="furnitureColorPaletteContainer"></div>
         </div>
 
-        <!-- Furniture Item Grid -->
         <div>
           <div class="flex items-center justify-between mb-1.5">
             <label class="text-[11px] font-bold text-stone-600">選擇家具（留有充足平面可擺放貼圖道具）</label>
             <span class="text-[10px] text-stone-400">消耗 5 ❤️ 佈置</span>
           </div>
-          <div class="grid grid-cols-2 gap-2" id="furnitureListContainer">
-            <!-- Populated with table, bookshelf, credenza, sofa, chairs, desk, rugs -->
-          </div>
+          <div class="grid grid-cols-2 gap-2" id="furnitureListContainer"></div>
         </div>
       </div>
     </div>
   </div>
 
   <!-- ======================================================== -->
-  <!-- MODAL: 時光日曆回憶錄 (ROOM DIARY & MEMORY TIMELINE) -->
+  <!-- MODAL: 時光日曆回憶錄 -->
   <!-- ======================================================== -->
   <div id="diariesTimelineModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-sm w-full p-4 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden space-y-3">
@@ -817,34 +799,98 @@
         </button>
       </div>
 
-      <!-- Filter Tabs -->
       <div class="flex space-x-1.5 bg-stone-100 p-1 rounded-xl text-xs font-medium shrink-0">
         <button onclick="filterDiariesTimeline('all')" id="timelineFilterAll" class="flex-1 py-1 text-center rounded-lg bg-white text-stone-800 font-bold shadow-xs">全部回憶</button>
         <button onclick="filterDiariesTimeline('me')" id="timelineFilterMe" class="flex-1 py-1 text-center rounded-lg text-stone-500">我的日記</button>
         <button onclick="filterDiariesTimeline('partner')" id="timelineFilterPartner" class="flex-1 py-1 text-center rounded-lg text-stone-500">對方的日記</button>
       </div>
 
-      <!-- Timeline List -->
-      <div class="overflow-y-auto custom-scrollbar flex-1 space-y-2.5 pr-1" id="diariesTimelineList">
-        <!-- Chronological diaries populated here -->
-      </div>
+      <div class="overflow-y-auto custom-scrollbar flex-1 space-y-2.5 pr-1" id="diariesTimelineList"></div>
     </div>
   </div>
 
   <!-- JAVASCRIPT LOGIC -->
   <script>
     // ==========================================
+    // 0. PWA HELPERS FOR GITHUB PAGES & MOBILE
+    // ==========================================
+    (function initPWAEnvironment() {
+      try {
+        // Automatically ensure trailing slash on directory URL for GitHub Pages
+        // This guarantees relative paths like './' resolve strictly inside the repository
+        if (window.location.protocol.startsWith('http') && window.self === window.top) {
+          const path = window.location.pathname;
+          if (!path.endsWith('/') && !path.split('/').pop().includes('.')) {
+            window.history.replaceState(null, '', path + '/' + window.location.search + window.location.hash);
+          }
+        }
+
+        // Render high-res PNG icons onto offscreen Canvas to maximize iOS & Android PWA compatibility
+        const c = document.createElement('canvas');
+        c.width = 192;
+        c.height = 192;
+        const ctx = c.getContext('2d');
+        if (ctx) {
+          ctx.fillStyle = '#fb923c';
+          if (ctx.roundRect) ctx.roundRect(0, 0, 192, 192, 44);
+          else ctx.rect(0, 0, 192, 192);
+          ctx.fill();
+
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.ellipse(96, 116, 35, 27, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          const toeList = [
+            { x: 62, y: 76, rx: 12, ry: 16, rot: -0.3 },
+            { x: 85, y: 62, rx: 13, ry: 17, rot: -0.1 },
+            { x: 107, y: 62, rx: 13, ry: 17, rot: 0.1 },
+            { x: 130, y: 76, rx: 12, ry: 16, rot: 0.3 }
+          ];
+          toeList.forEach(t => {
+            ctx.beginPath();
+            ctx.ellipse(t.x, t.y, t.rx, t.ry, t.rot, 0, Math.PI * 2);
+            ctx.fill();
+          });
+
+          const pngDataUrl = c.toDataURL('image/png');
+          const appleIcon = document.querySelector('link[rel="apple-touch-icon"]');
+          if (appleIcon) appleIcon.href = pngDataUrl;
+        }
+
+        // Keep iOS in standalone window mode
+        if (('standalone' in window.navigator) && window.navigator.standalone) {
+          document.addEventListener('click', function(e) {
+            const anchor = e.target.closest('a');
+            if (anchor && anchor.getAttribute('target') !== '_blank' && anchor.hostname === window.location.hostname) {
+              e.preventDefault();
+              window.location.href = anchor.href;
+            }
+          }, false);
+        }
+      } catch (e) {
+        console.warn('PWA setup fallback:', e);
+      }
+    })();
+
+    // Safe Lucide wrapper
+    function safeLucide() {
+      if (window.lucide && typeof lucide.createIcons === 'function') {
+        try { lucide.createIcons(); } catch (e) {}
+      }
+    }
+
+    // ==========================================
     // 1. STATE & MULTI-ROOM STORAGE
     // ==========================================
     const DEFAULT_DATA = {
       steps: 0,
       tickets: 2,
-      hearts: 30, // Global walking hearts pool
+      hearts: 30,
       pairedCode: null,
       myCode: 'COZY-' + Math.floor(100 + Math.random() * 900),
       isPartnerNearby: false,
       activeRoomId: 'room_default',
-      // Multi-room support: multiple rooms with different people
       rooms: [
         {
           id: 'room_default',
@@ -902,7 +948,6 @@
       ]
     };
 
-    // Load state safely & migrate structure if needed
     let appState = DEFAULT_DATA;
     try {
       const saved = localStorage.getItem('cozystep_state');
@@ -949,13 +994,6 @@
       return room;
     }
 
-    // Nurturing Timer State
-    let nurtureTimerInterval = null;
-    let nurtureSeconds = 0;
-    let gainedSessionHearts = 0;
-    let isAmbientPlaying = false;
-    let audioCtx = null;
-
     // Freehand Drawing Cutout State
     let cutoutPoints = [];
     let isDrawingCutout = false;
@@ -963,15 +1001,13 @@
     let cutoutMode = 'custom';
     let inspectedItemId = null;
 
-    const PLACEMENT_HEART_COST = 10; // 每個貼圖佈置需要10顆愛心
-    const BG_HEART_COST = 15;        // 更換滿板壁紙/地板需15顆愛心
-    const RECYCLE_HEART_REWARD = 5;  // 撤除佈置回收一半數量愛心
-    const FURNITURE_HEART_COST = 5;  // 佈置家具需 5 顆愛心
+    const PLACEMENT_HEART_COST = 10;
+    const BG_HEART_COST = 15;
+    const RECYCLE_HEART_REWARD = 5;
+    const FURNITURE_HEART_COST = 5;
 
-    // Screenshot cache
     let currentScreenshotDataUrl = null;
 
-    // Room Dimensions & Viewport State
     const ROOM_WIDTH = 1600;
     const ROOM_HEIGHT = 1200;
 
@@ -987,9 +1023,7 @@
     // 2. INITIALIZATION
     // ==========================================
     function initializeApp() {
-      if (window.lucide && typeof lucide.createIcons === 'function') {
-        lucide.createIcons();
-      }
+      safeLucide();
       const myCodeInput = document.getElementById('myPairingCode');
       if (myCodeInput) myCodeInput.value = appState.myCode;
       
@@ -997,7 +1031,6 @@
       const dateInput = document.getElementById('stickerDateInput');
       if (dateInput) dateInput.value = todayStr;
 
-      // Bind pairing button trigger
       const pairBtn = document.getElementById('pairingModalBtn');
       if (pairBtn) {
         pairBtn.addEventListener('click', openPairingModal);
@@ -1008,7 +1041,7 @@
       restoreRoomItems();
       applyRoomBackgrounds();
       initRoomZoomAndPan();
-      setTimeout(() => fitRoomToScreen(true), 100);
+      setTimeout(() => fitRoomToScreen(true), 120);
       updateContributionRatio();
       initPedometerSensors();
       initCutoutCanvas();
@@ -1078,7 +1111,6 @@
     function updateUI() {
       const currentRoom = getActiveRoom();
 
-      // Step numbers & currencies
       document.getElementById('headerStepCounter').innerText = appState.steps.toLocaleString();
       document.getElementById('walkStepDisplay').innerText = appState.steps.toLocaleString();
       document.getElementById('headerHeartCounter').innerText = appState.hearts;
@@ -1086,20 +1118,15 @@
       document.getElementById('stickerTicketBadge').innerText = `自製票券：${appState.tickets}`;
       document.getElementById('claimTicketBtn').disabled = (appState.steps < 1000);
 
-      // Room Header Badges
       document.getElementById('currentRoomShortBadge').innerText = currentRoom.name;
       document.getElementById('roomTitleDisplay').innerText = currentRoom.name;
-      const partnerTag = document.getElementById('roomPartnerTag');
-      if (partnerTag) partnerTag.innerText = `對象：${currentRoom.partnerName || '未指定'}`;
 
-      // Circle Progress
       const maxTarget = 5000;
       const progress = Math.min(appState.steps / maxTarget, 1);
       const circumference = 2 * Math.PI * 100;
       const offset = circumference - (progress * circumference);
       document.getElementById('stepCircleProgress').style.strokeDashoffset = offset;
 
-      // Partner Proximity Bar
       const partnerDot = document.getElementById('partnerStatusDot');
       const partnerText = document.getElementById('partnerStatusText');
       const proximityMsg = document.getElementById('proximityMessage');
@@ -1119,13 +1146,11 @@
         proximityMsg.innerText = '單人漫遊中';
       }
 
-      const countEl = document.getElementById('roomItemCount');
-      if (countEl) countEl.innerText = currentRoom.placedDecorations.length;
       updateContributionRatio();
     }
 
     // ==========================================
-    // 3. MULTI-ROOM MANAGEMENT (多小窩切換與建立)
+    // 3. MULTI-ROOM MANAGEMENT
     // ==========================================
     function openRoomManagerModal() {
       renderRoomsList();
@@ -1177,7 +1202,7 @@
         `;
         container.appendChild(card);
       });
-      lucide.createIcons();
+      safeLucide();
     }
 
     function selectActiveRoom(roomId) {
@@ -1225,17 +1250,15 @@
         showToast('至少需保留一個小窩！');
         return;
       }
-      if (confirm('確定要刪除此小窩嗎？小窩內所有的佈置將被移除。')) {
-        appState.rooms = appState.rooms.filter(r => r.id !== roomId);
-        if (appState.activeRoomId === roomId) {
-          appState.activeRoomId = appState.rooms[0].id;
-        }
-        saveState();
-        renderRoomsList();
-        restoreRoomItems();
-        updateUI();
-        showToast('小窩已刪除');
+      appState.rooms = appState.rooms.filter(r => r.id !== roomId);
+      if (appState.activeRoomId === roomId) {
+        appState.activeRoomId = appState.rooms[0].id;
       }
+      saveState();
+      renderRoomsList();
+      restoreRoomItems();
+      updateUI();
+      showToast('小窩已刪除');
     }
 
     function shareRoomCodePrompt(roomId) {
@@ -1249,12 +1272,16 @@
       dummy.select();
       document.execCommand("copy");
       document.body.removeChild(dummy);
-      showToast(`📋 已複製「${room.name}」邀請代碼！傳給對方即可同進同出`);
+      showToast(`📋 已複製「${room.name}」邀請代碼！`);
     }
 
     function joinRoomByShareCode() {
-      const code = prompt('請輸入對方發送的小窩代碼 (例如 room_xxxx 或完整邀請文字)：');
-      if (!code) return;
+      const codeInput = document.getElementById('newRoomNameInput');
+      const code = codeInput ? codeInput.value.trim() : '';
+      if (!code) {
+        showToast('請在小窩名稱欄填寫代碼');
+        return;
+      }
 
       const match = code.match(/room_[a-z0-9]+/i);
       const targetRoomId = match ? match[0] : code.trim();
@@ -1266,7 +1293,6 @@
         return;
       }
 
-      // Create local linked entry for this joined shared room
       const joinedRoom = {
         id: targetRoomId,
         name: '共享同一個小窩',
@@ -1282,11 +1308,11 @@
       restoreRoomItems();
       updateUI();
       closeRoomManagerModal();
-      showToast('🎉 成功加入對方的共享小窩！請點擊同步按鈕獲取最新佈置');
+      showToast('🎉 成功加入對方的共享小窩！');
     }
 
     // ==========================================
-    // 4. EFFORT / CONTRIBUTION RATIO (心力天平)
+    // 4. EFFORT / CONTRIBUTION RATIO (付出天秤)
     // ==========================================
     function updateContributionRatio() {
       const room = getActiveRoom();
@@ -1327,7 +1353,6 @@
     // 5. TAB NAVIGATION
     // ==========================================
     function switchTab(tabId) {
-      // 切換分頁時確保關閉所有日記彈窗
       closeMemoryInspect();
 
       const tabs = ['walk', 'stickers', 'room'];
@@ -1346,7 +1371,6 @@
       if (tabId === 'room') {
         restoreRoomItems();
         updateContributionRatio();
-        // 點擊共同小窩，預設自動置中全景
         setTimeout(() => {
           fitRoomToScreen();
         }, 50);
@@ -1356,9 +1380,7 @@
     // ==========================================
     // 6. WALKING & PEDOMETER SYSTEM
     // ==========================================
-    function initPedometerSensors() {
-      // Setup initial listeners if permissions allow
-    }
+    function initPedometerSensors() {}
 
     function requestMotionPermission() {
       if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
@@ -1577,7 +1599,6 @@
         return;
       }
 
-      const canvas = document.getElementById('cutoutCanvas');
       const titleInput = document.getElementById('stickerTitleInput').value.trim() || '美好的一天';
       const dateInput = document.getElementById('stickerDateInput').value || new Date().toISOString().split('T')[0];
       const diaryInput = document.getElementById('stickerDiaryInput').value.trim() || '與你共同走過的溫暖日常。';
@@ -1689,7 +1710,6 @@
       const room = getActiveRoom();
       appState.hearts -= PLACEMENT_HEART_COST;
 
-      // Place near center of viewport
       const spawnX = Math.round((-roomViewport.x + 150) / (roomViewport.scale || 1));
       const spawnY = Math.round((-roomViewport.y + 150) / (roomViewport.scale || 1));
 
@@ -1717,31 +1737,12 @@
       showToast(`✨ 已消耗 ${PLACEMENT_HEART_COST} 顆愛心將「${sticker.name}」擺入小窩！`);
     }
 
-    function clearRoomCanvas() {
-      const room = getActiveRoom();
-      if (room.placedDecorations.length === 0) return;
-      if (confirm('確定要清空目前小窩中的所有佈置項目嗎？')) {
-        let recycled = 0;
-        room.placedDecorations.forEach(d => {
-          if (d.creator === 'me') recycled += RECYCLE_HEART_REWARD;
-        });
-        room.placedDecorations = [];
-        appState.hearts += recycled;
-        saveState();
-        restoreRoomItems();
-        updateUI();
-        showToast(`已清空小窩，並回收返還 +${recycled} 顆愛心！`);
-      }
-    }
-
     function restoreRoomItems() {
       const world = document.getElementById('roomWorld');
       if (!world) return;
 
-      // Restore furniture first so it is rendered below stickers
       restoreRoomFurniture();
 
-      // Remove existing stickers
       const oldItems = world.querySelectorAll('.room-sticker');
       oldItems.forEach(i => i.remove());
 
@@ -1752,7 +1753,7 @@
     }
 
     // ==========================================
-    // 8. ROOM VIEWPORT: ZOOM & PAN SYSTEM (自由拖曳與邊界保護)
+    // 8. ROOM VIEWPORT: ZOOM & PAN SYSTEM
     // ==========================================
     function updateMinScale() {
       const container = document.getElementById('roomContainer');
@@ -1850,7 +1851,6 @@
         y: (t1.clientY + t2.clientY) / 2
       });
 
-      // Touch interactions
       container.addEventListener('touchstart', (e) => {
         if (e.touches.length === 2) {
           isPinching = true;
@@ -1914,7 +1914,6 @@
       container.addEventListener('touchend', endTouch);
       container.addEventListener('touchcancel', endTouch);
 
-      // Mouse drag pan
       container.addEventListener('mousedown', (e) => {
         if (e.target.closest('.room-sticker') || e.target.closest('.room-furniture') || e.target.closest('#roomWallCalendar') || e.target.closest('button')) {
           return;
@@ -1946,7 +1945,6 @@
         window.addEventListener('mouseup', onMouseUp);
       });
 
-      // Mouse wheel zoom
       container.addEventListener('wheel', (e) => {
         e.preventDefault();
         const delta = e.deltaY < 0 ? 0.08 : -0.08;
@@ -2294,7 +2292,7 @@
     function openDiariesTimelineModal() {
       renderDiariesTimeline();
       document.getElementById('diariesTimelineModal').classList.remove('hidden');
-      lucide.createIcons();
+      safeLucide();
     }
 
     function closeDiariesTimelineModal() {
@@ -2345,7 +2343,7 @@
             <div class="text-[10px]">散步累計步數自製貼圖，記錄你們的生活故事！</div>
           </div>
         `;
-        lucide.createIcons();
+        safeLucide();
         return;
       }
 
@@ -2382,14 +2380,14 @@
         `;
         listEl.appendChild(card);
       });
-      lucide.createIcons();
+      safeLucide();
     }
 
     function openFurnitureModal() {
       renderFurnitureColorPalette();
       renderFurnitureList();
       document.getElementById('furnitureCatalogModal').classList.remove('hidden');
-      lucide.createIcons();
+      safeLucide();
     }
 
     function closeFurnitureModal() {
@@ -2518,7 +2516,6 @@
       el.style.zIndex = '6';
       el.style.transform = `rotate(${furn.rotation || 0}deg)`;
 
-      // SVG 渲染容器，保持等比自適應縮放
       const svgWrapper = document.createElement('div');
       svgWrapper.className = 'furniture-svg-wrapper w-full h-full pointer-events-none flex items-center justify-center';
       svgWrapper.innerHTML = itemDef.render(pal);
@@ -2540,7 +2537,6 @@
         initialTop = parseFloat(el.style.top) || furn.y;
         hasMoved = false;
 
-        // 長按 450ms 進入家具編輯模式
         clearTimeout(pressTimer);
         pressTimer = setTimeout(() => {
           if (!hasMoved) {
@@ -2606,7 +2602,6 @@
       };
 
       const enableFurnitureEditMode = () => {
-        // 清除其他物件的編輯狀態
         document.querySelectorAll('.sticker-editing-box').forEach(b => {
           b.classList.remove('sticker-editing-box');
           const h = b.querySelector('.sticker-edit-handles');
@@ -2619,14 +2614,12 @@
         const handleContainer = document.createElement('div');
         handleContainer.className = 'sticker-edit-handles absolute -inset-3 pointer-events-none z-20';
 
-        // 1. 旋轉把手 (左上角)
         const rotBtn = document.createElement('button');
         rotBtn.className = 'handle-btn absolute -top-2.5 -left-2.5 w-7 h-7 bg-white text-stone-800 rounded-full border border-stone-300 flex items-center justify-center text-xs font-bold pointer-events-auto active:scale-90';
         rotBtn.innerHTML = '↻';
         rotBtn.title = '拖曳旋轉家具角度';
         initFurnitureRotateHandle(rotBtn, furn, el);
 
-        // 2. 切換色系按鈕 (頂部中央)
         const colorBtn = document.createElement('button');
         colorBtn.className = 'handle-btn absolute -top-3.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 bg-stone-900 text-white rounded-full text-[10px] font-bold pointer-events-auto active:scale-95 shadow-xs flex items-center space-x-1 whitespace-nowrap';
         const curPal = FURNITURE_COLOR_PALETTES.find(p => p.id === furn.colorId) || FURNITURE_COLOR_PALETTES[0];
@@ -2644,7 +2637,6 @@
           showToast(`已切換為：「${newPal.name}」色系`);
         };
 
-        // 3. 刪除/收回家具按鈕 (右上角)
         const delBtn = document.createElement('button');
         delBtn.className = 'handle-btn absolute -top-2.5 -right-2.5 w-7 h-7 bg-rose-500 text-white rounded-full flex items-center justify-center text-xs font-bold pointer-events-auto active:scale-90 shadow-xs';
         delBtn.innerHTML = '✕';
@@ -2660,7 +2652,6 @@
           showToast('♻️ 已收回家具，返還 +3 顆相處愛心！');
         };
 
-        // 4. 縮放把手 (右下角)
         const resizeBtn = document.createElement('button');
         resizeBtn.className = 'handle-btn absolute -bottom-2.5 -right-2.5 w-7 h-7 bg-brand-500 text-white rounded-full flex items-center justify-center text-xs font-bold pointer-events-auto active:scale-90 shadow-xs';
         resizeBtn.innerHTML = '⤡';
@@ -2834,7 +2825,6 @@
       let initX = 0, initY = 0;
       let moved = false;
       let pressTimer = null;
-      let isEditMode = false;
 
       const startPress = (e) => {
         if (e.target.closest('.handle-btn')) return;
@@ -2918,7 +2908,6 @@
           if (h) h.remove();
         });
 
-        isEditMode = true;
         el.classList.add('sticker-editing-box');
 
         const handleContainer = document.createElement('div');
@@ -3071,7 +3060,6 @@
       handleEl.addEventListener('touchstart', startResize, { passive: false });
     }
 
-    // Deselect edit boxes when clicking empty room background
     document.addEventListener('pointerdown', (e) => {
       if (!e.target.closest('.room-sticker') && !e.target.closest('.room-furniture')) {
         document.querySelectorAll('.sticker-editing-box').forEach(box => {
@@ -3121,7 +3109,7 @@
 
       renderInspectComments(decor);
       modal.classList.remove('hidden');
-      lucide.createIcons();
+      safeLucide();
     }
 
     function closeMemoryInspect() {
@@ -3212,7 +3200,8 @@
 
       ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
       ctx.beginPath();
-      ctx.roundRect(bx, by, badgeW, badgeH, 12);
+      if (ctx.roundRect) ctx.roundRect(bx, by, badgeW, badgeH, 12);
+      else ctx.rect(bx, by, badgeW, badgeH);
       ctx.fill();
 
       ctx.fillStyle = '#1c1917';
@@ -3228,7 +3217,7 @@
       currentScreenshotDataUrl = finalCanvas.toDataURL('image/png');
       document.getElementById('screenshotPreviewImg').src = currentScreenshotDataUrl;
       document.getElementById('screenshotModal').classList.remove('hidden');
-      lucide.createIcons();
+      safeLucide();
     }
 
     function generateFallbackRoomCanvas(activeRoom, minX = 0, minY = 0, cropW = ROOM_WIDTH, cropH = ROOM_HEIGHT) {
@@ -3361,7 +3350,7 @@
     }
 
     // ==========================================
-    // 13. SHARED ROOM DATA SYNC & MERGE (共享同一個小窩)
+    // 13. SHARED ROOM DATA SYNC & MERGE
     // ==========================================
     function openSyncDataModal() {
       const room = getActiveRoom();
