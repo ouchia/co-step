@@ -1,0 +1,3450 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>步伴 CozyStep - 雙人散步與小窩培育</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- html2canvas for Screenshot Sharing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#fff7ed',
+              100: '#ffedd5',
+              200: '#fed7aa',
+              300: '#fdba74',
+              400: '#fb923c',
+              500: '#f97316',
+              600: '#ea580c',
+              dark: '#2c2523'
+            },
+            pastel: {
+              pink: '#ffcad4',
+              cream: '#ffe5d9',
+              green: '#d8e2dc',
+              peach: '#f4acb7',
+              wood: '#b5838d'
+            }
+          },
+          fontFamily: {
+            sans: ['"Inter"', 'system-ui', '-apple-system', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Mobile app optimizations */
+    html, body {
+      overscroll-behavior: none;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      height: 100%;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .custom-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    /* Gentle breathing animation for companion mode */
+    @keyframes pulse-subtle {
+      0%, 100% { transform: scale(1); opacity: 0.95; }
+      50% { transform: scale(1.04); opacity: 1; }
+    }
+    .animate-breathe {
+      animation: pulse-subtle 4s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-6px) rotate(1deg); }
+    }
+    .animate-floating {
+      animation: float 5s ease-in-out infinite;
+    }
+    .room-grid {
+      background-size: 24px 24px;
+      background-image: radial-gradient(circle, #e2d9d2 1.5px, transparent 1.5px);
+    }
+    /* New memory breathing glow animation */
+    @keyframes memory-glow {
+      0%, 100% {
+        filter: drop-shadow(0 0 6px rgba(251, 146, 60, 0.5)) drop-shadow(0 0 12px rgba(244, 114, 182, 0.4));
+        transform: translateY(0) rotate(var(--rot, 0deg));
+      }
+      50% {
+        filter: drop-shadow(0 0 14px rgba(251, 146, 60, 0.9)) drop-shadow(0 0 22px rgba(244, 114, 182, 0.75));
+        transform: translateY(-2px) rotate(var(--rot, 0deg));
+      }
+    }
+    .unread-memory-glow {
+      animation: memory-glow 2.4s ease-in-out infinite;
+    }
+    /* Sticker outline styles: 徹底移除白邊光暈，純淨透明無白線 */
+    .sticker-with-border {
+      filter: drop-shadow(0 2px 5px rgba(0,0,0,0.2)) drop-shadow(0 0 1.5px #ffffff) drop-shadow(0 0 2px #ffffff);
+    }
+    /* 乾淨剪裁：純透明無痕邊界，絕無任何白色邊框與白光暈線條 */
+    .sticker-no-border {
+      filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.16));
+    }
+    /* Active editing handles styling */
+    .sticker-editing-box {
+      outline: 2px dashed #f97316;
+      outline-offset: 4px;
+      border-radius: 12px;
+    }
+    .handle-btn {
+      touch-action: none;
+      user-select: none;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+    }
+  </style>
+</head>
+<body class="bg-stone-100 text-stone-800 h-full flex flex-col justify-between overflow-hidden font-sans">
+
+  <!-- FLOATING TOAST NOTIFICATION -->
+  <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 translate-y-[-10px] transition-all duration-300 bg-stone-900/90 text-white text-xs font-medium py-2 px-4 rounded-full shadow-lg backdrop-blur-sm max-w-[90vw] text-center"></div>
+
+  <!-- TOP STATUS BAR / HEADER -->
+  <header class="bg-white/80 backdrop-blur border-b border-stone-200 px-4 py-3 flex items-center justify-between z-20 shrink-0">
+    <div class="flex items-center space-x-2">
+      <div class="w-8 h-8 rounded-full bg-brand-400 text-white flex items-center justify-center font-black shadow-sm text-sm">
+        🐾
+      </div>
+      <div>
+        <h1 class="text-base font-bold text-stone-800 leading-tight">步伴 CozyStep</h1>
+        <div class="flex items-center text-xs text-stone-500 space-x-1">
+          <span id="partnerStatusDot" class="w-2 h-2 rounded-full bg-stone-300 inline-block"></span>
+          <span id="partnerStatusText">單人漫遊中</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Currency & Pair Status Badge -->
+    <div class="flex items-center space-x-2">
+      <div class="flex items-center bg-orange-50 border border-orange-200/80 px-2.5 py-1 rounded-full text-xs font-semibold text-orange-700">
+        <i data-lucide="footprints" class="w-3.5 h-3.5 mr-1 text-orange-500"></i>
+        <span id="headerStepCounter">0</span>
+      </div>
+      <!-- 可點擊快捷測試按鈕：點擊直接增加 100 顆愛心 -->
+      <button onclick="simulateHearts(100)" class="flex items-center bg-rose-50 hover:bg-rose-100 border border-rose-200/80 px-2.5 py-1 rounded-full text-xs font-semibold text-rose-600 active:scale-95 transition cursor-pointer" title="測試快捷：點擊愛心 +100">
+        <i data-lucide="heart" class="w-3.5 h-3.5 mr-1 text-rose-500 fill-rose-500"></i>
+        <span id="headerHeartCounter">0</span>
+        <span class="ml-1 text-[10px] text-rose-400 font-normal">+100</span>
+      </button>
+      <!-- Room Switcher Trigger Button -->
+      <button onclick="openRoomManagerModal()" class="flex items-center space-x-1 py-1 px-2 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 active:scale-95 transition text-xs font-medium border border-stone-200">
+        <i data-lucide="door-open" class="w-3.5 h-3.5 text-brand-500"></i>
+        <span id="currentRoomShortBadge" class="max-w-[70px] truncate">預設小窩</span>
+      </button>
+      <button id="pairingModalBtn" class="p-1.5 rounded-full hover:bg-stone-100 text-stone-600 active:scale-95 transition">
+        <i data-lucide="rss" class="w-5 h-5"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN VIEWPORT (SWITCHABLE TABS) -->
+  <main class="flex-1 overflow-y-auto custom-scrollbar relative flex flex-col">
+
+    <!-- TAB 1: 散步與步數 (WALK TAB) -->
+    <section id="tab-walk" class="flex-1 p-4 flex flex-col items-center justify-between max-w-md mx-auto w-full pb-20">
+      
+      <!-- Partner Proximity Banner (Minimalist) -->
+      <div id="proximityAlert" class="w-full bg-white border border-stone-200/80 rounded-2xl p-3 flex items-center justify-between text-xs text-stone-700 shadow-sm">
+        <div class="flex items-center space-x-2">
+          <span class="relative flex h-2.5 w-2.5">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-orange-500"></span>
+          </span>
+          <span id="proximityMessage" class="font-medium text-xs">單人漫遊中</span>
+        </div>
+        <div class="flex items-center space-x-1.5">
+          <button onclick="simulateHearts(100)" class="text-rose-600 font-semibold bg-rose-50 hover:bg-rose-100 border border-rose-200 px-2 py-1 rounded-lg active:scale-95 transition text-[11px] flex items-center space-x-1" title="測試功能：增加 100 顆愛心">
+            <i data-lucide="heart" class="w-3 h-3 fill-rose-500"></i>
+            <span>愛心 +100</span>
+          </button>
+          <button onclick="toggleNearnessSim()" class="text-stone-600 font-semibold bg-stone-100 hover:bg-stone-200 px-2.5 py-1 rounded-lg active:scale-95 transition text-[11px]">
+            模擬靠近
+          </button>
+        </div>
+      </div>
+
+      <!-- Pedo Progress Circle -->
+      <div class="relative w-64 h-64 flex items-center justify-center my-auto">
+        <svg class="w-full h-full transform -rotate-90">
+          <circle cx="128" cy="128" r="100" stroke="#f3f4f6" stroke-width="14" fill="transparent"></circle>
+          <circle id="stepCircleProgress" cx="128" cy="128" r="100" stroke="#fb923c" stroke-width="14" fill="transparent"
+                  stroke-dasharray="628" stroke-dashoffset="628" stroke-linecap="round" class="transition-all duration-500"></circle>
+        </svg>
+
+        <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+          <span class="text-[11px] tracking-wider text-stone-400 font-semibold uppercase">今日步數</span>
+          <span id="walkStepDisplay" class="text-4xl font-extrabold text-stone-800 tracking-tight my-1">0</span>
+          <span class="text-xs text-stone-400">目標 5,000</span>
+        </div>
+      </div>
+
+      <!-- Step Controls & Sensor Toggle -->
+      <div class="w-full space-y-2.5 mt-2">
+        <div class="grid grid-cols-2 gap-2">
+          <button id="sensorBtn" onclick="requestMotionPermission()" class="flex items-center justify-center space-x-1.5 py-2.5 px-3 bg-white border border-stone-200 rounded-xl font-medium text-xs text-stone-700 shadow-sm active:bg-stone-50">
+            <i data-lucide="smartphone" class="w-3.5 h-3.5 text-stone-500"></i>
+            <span id="sensorStatusText">啟用感測器</span>
+          </button>
+          <button onclick="simulateSteps(200)" class="flex items-center justify-center space-x-1.5 py-2.5 px-3 bg-white border border-stone-200 rounded-xl font-medium text-xs text-stone-700 shadow-sm active:bg-stone-50">
+            <i data-lucide="play" class="w-3.5 h-3.5 text-stone-500"></i>
+            <span>模擬行走 (+200)</span>
+          </button>
+        </div>
+
+        <!-- Reward claim banner -->
+        <div class="bg-white border border-stone-200 rounded-2xl p-3 shadow-sm flex items-center justify-between">
+          <div>
+            <div class="text-xs font-bold text-stone-800">貼圖製作券</div>
+            <div class="text-[11px] text-stone-400" id="ticketSummary">現有：0 張</div>
+          </div>
+          <button id="claimTicketBtn" onclick="claimStepTicket()" class="px-3.5 py-1.5 bg-brand-500 disabled:opacity-30 hover:bg-brand-600 text-white rounded-xl text-xs font-semibold shadow-sm transition active:scale-95" disabled>
+            兌換票券
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: 貼圖工坊 (STICKER STUDIO) -->
+    <section id="tab-stickers" class="flex-1 p-4 max-w-md mx-auto w-full pb-20 hidden">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-base font-bold text-stone-800">貼圖工坊</h2>
+        <span class="text-xs px-2.5 py-0.5 bg-stone-100 text-stone-600 font-semibold rounded-full" id="stickerTicketBadge">
+          票券：0
+        </span>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="grid grid-cols-2 gap-2 mb-4">
+        <label class="cursor-pointer flex items-center justify-center space-x-2 bg-white border border-stone-200 py-3 rounded-2xl shadow-sm active:scale-95 transition text-stone-700 text-xs font-semibold">
+          <i data-lucide="camera" class="w-4 h-4 text-stone-800"></i>
+          <span>拍照自製</span>
+          <input type="file" accept="image/*" capture="environment" class="hidden" onchange="handleImageInput(event)">
+        </label>
+        <label class="cursor-pointer flex items-center justify-center space-x-2 bg-white border border-stone-200 py-3 rounded-2xl shadow-sm active:scale-95 transition text-stone-700 text-xs font-semibold">
+          <i data-lucide="image" class="w-4 h-4 text-stone-600"></i>
+          <span>相簿選取</span>
+          <input type="file" accept="image/*" class="hidden" onchange="handleImageInput(event)">
+        </label>
+      </div>
+
+      <div class="mb-2 flex items-center justify-between">
+        <h3 class="text-xs font-bold text-stone-500 uppercase tracking-wider">我的貼圖 (<span id="stickerCount">0</span>)</h3>
+      </div>
+
+      <div id="stickerGrid" class="grid grid-cols-2 gap-2.5">
+        <!-- Populated dynamically -->
+      </div>
+    </section>
+
+    <!-- TAB 3: 共同佈置小窩 (COZY ROOM) -->
+    <section id="tab-room" class="flex-1 flex flex-col h-full relative hidden pb-16">
+      
+      <!-- Effort / Contribution Ratio Bar: 付出天秤 -->
+      <div class="bg-white/95 backdrop-blur px-4 py-2 border-b border-stone-200 text-xs shrink-0 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <span class="font-bold text-stone-900 text-xs">付出天秤</span>
+          <span class="text-[11px] text-stone-400">
+            我 <span id="myContribText">50%</span> : 對方 <span id="partnerContribText">50%</span>
+          </span>
+        </div>
+        <div class="w-32 bg-stone-100 rounded-full h-2 overflow-hidden flex shadow-inner">
+          <div id="myContribBar" class="bg-stone-900 h-full transition-all duration-500" style="width: 50%;"></div>
+          <div id="partnerContribBar" class="bg-stone-300 h-full transition-all duration-500" style="width: 50%;"></div>
+        </div>
+      </div>
+
+      <!-- Compact Single-Row Toolbar (極簡一排設計，移除清空) -->
+      <div class="px-3 py-1.5 bg-white border-b border-stone-200 flex items-center justify-between text-xs shrink-0">
+        <button onclick="openRoomManagerModal()" class="flex items-center space-x-1 font-bold text-stone-800 bg-stone-50 hover:bg-stone-100 border border-stone-200 px-2 py-1 rounded-xl active:scale-95 transition max-w-[120px] truncate">
+          <span id="roomTitleDisplay" class="truncate">甜蜜小窩</span>
+          <i data-lucide="chevron-down" class="w-3 h-3 text-stone-400 shrink-0"></i>
+        </button>
+
+        <div class="flex items-center space-x-1 shrink-0">
+          <button onclick="captureAndShareRoom()" class="p-1.5 bg-stone-50 hover:bg-stone-100 border border-stone-200 rounded-xl text-stone-700 active:scale-95 transition" title="截圖小窩">
+            <i data-lucide="camera" class="w-3.5 h-3.5"></i>
+          </button>
+          <button onclick="openFurnitureModal()" class="p-1.5 bg-stone-50 hover:bg-stone-100 border border-stone-200 rounded-xl text-stone-700 active:scale-95 transition" title="選取家具">
+            <i data-lucide="armchair" class="w-3.5 h-3.5"></i>
+          </button>
+          <button onclick="openBackgroundThemeModal()" class="p-1.5 bg-stone-50 hover:bg-stone-100 border border-stone-200 rounded-xl text-stone-700 active:scale-95 transition" title="裝潢">
+            <i data-lucide="palette" class="w-3.5 h-3.5"></i>
+          </button>
+          <button onclick="openSyncDataModal()" class="p-1.5 bg-stone-50 hover:bg-stone-100 border border-stone-200 rounded-xl text-stone-700 active:scale-95 transition" title="同步">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+          </button>
+          <button onclick="openStickerPickerForRoom()" class="px-2.5 py-1 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs font-semibold flex items-center space-x-1 shadow-sm active:scale-95 transition">
+            <i data-lucide="plus" class="w-3 h-3"></i>
+            <span>擺放</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Room Canvas Container with Zoom & Pan Viewport -->
+      <div id="roomContainer" class="flex-1 w-full relative overflow-hidden bg-[#f8f5f0] touch-none select-none">
+        <!-- Floating Zoom / Viewport Controls -->
+        <div class="absolute bottom-3 right-3 z-30 flex flex-col space-y-1 bg-white/85 backdrop-blur-md p-1 rounded-2xl shadow-sm border border-stone-200">
+          <button onclick="adjustRoomZoom(0.12)" class="w-7 h-7 flex items-center justify-center text-stone-700 hover:text-brand-500 active:scale-90 rounded-lg transition" title="放大">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+          </button>
+          <div id="roomZoomDisplay" class="text-[9px] font-mono text-center text-stone-400 font-bold">100%</div>
+          <button onclick="adjustRoomZoom(-0.12)" class="w-7 h-7 flex items-center justify-center text-stone-700 hover:text-brand-500 active:scale-90 rounded-lg transition" title="縮小">
+            <i data-lucide="minus" class="w-3.5 h-3.5"></i>
+          </button>
+          <button onclick="fitRoomToScreen()" class="w-7 h-7 flex items-center justify-center text-stone-700 hover:text-brand-500 active:scale-90 rounded-lg transition" title="置中全景">
+            <i data-lucide="maximize" class="w-3 h-3"></i>
+          </button>
+        </div>
+
+        <!-- Zoomable & Pannable World Layer -->
+        <div id="roomWorld" class="absolute origin-top-left will-change-transform shadow-2xl" style="width: 1600px; height: 1200px; transform: translate3d(0px, 0px, 0px) scale(1);">
+          <!-- Dynamic Wall Wallpaper -->
+          <div id="roomWallpaperLayer" class="absolute inset-0 bg-[#f8f5f0] room-grid border-b-8 border-stone-300/80 bg-cover bg-center transition-all duration-300"></div>
+
+          <!-- Dynamic Flooring Layer -->
+          <div id="roomFlooringLayer" class="absolute bottom-0 left-0 right-0 h-[400px] bg-[#eedecf] border-t-8 border-[#d1bfaf] bg-repeat transition-all duration-300"></div>
+
+          <!-- Aesthetic Window -->
+          <div class="absolute top-16 left-24 w-40 h-52 border-4 border-stone-300/80 rounded-t-full bg-sky-100/40 backdrop-blur-sm pointer-events-none flex flex-col items-center justify-center shadow-inner">
+            <div class="w-full h-0.5 bg-stone-300/60 absolute top-1/2"></div>
+            <div class="h-full w-0.5 bg-stone-300/60 absolute left-1/2"></div>
+            <span class="text-xl text-amber-400/80">☀️</span>
+          </div>
+
+          <!-- Interactive Wall Calendar (小窩時光日曆：點開查閱所有日記) -->
+          <div id="roomWallCalendar" onclick="openDiariesTimelineModal()" class="absolute top-16 right-36 w-24 bg-white border-2 border-stone-800 rounded-2xl shadow-md cursor-pointer hover:scale-105 active:scale-95 transition-transform z-10 flex flex-col overflow-hidden select-none group" title="點擊查看所有回憶日記">
+            <!-- Pin hanging ring -->
+            <div class="absolute -top-1.5 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-stone-800 border border-white"></div>
+            <div class="bg-stone-900 text-white text-[9px] font-bold text-center py-1 tracking-wider uppercase">
+              <span id="calendarMonthText">11月</span>
+            </div>
+            <div class="p-1.5 flex flex-col items-center justify-center bg-stone-50">
+              <span id="calendarDateText" class="text-2xl font-black text-stone-800 leading-none">08</span>
+              <span id="calendarDayText" class="text-[8px] font-bold text-stone-400 uppercase mt-0.5">SUN</span>
+            </div>
+            <div class="bg-stone-100 border-t border-stone-200 py-0.5 text-[8px] text-stone-600 font-bold text-center group-hover:bg-amber-100 group-hover:text-amber-800 transition">
+              <span>📖 回憶時光</span>
+            </div>
+          </div>
+
+          <!-- Interactive Sticker and Furniture items will be appended into roomWorld -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- BOTTOM NAVIGATION BAR -->
+  <nav class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur border-t border-stone-200 flex items-center justify-around py-2 px-4 z-20">
+    <button onclick="switchTab('walk')" id="nav-walk" class="flex flex-col items-center text-brand-500 font-semibold text-xs py-1 px-3">
+      <i data-lucide="footprints" class="w-5 h-5 mb-0.5"></i>
+      <span>散步步數</span>
+    </button>
+    <button onclick="switchTab('stickers')" id="nav-stickers" class="flex flex-col items-center text-stone-400 hover:text-stone-600 font-medium text-xs py-1 px-3">
+      <i data-lucide="sparkles" class="w-5 h-5 mb-0.5"></i>
+      <span>自製貼圖</span>
+    </button>
+    <button onclick="switchTab('room')" id="nav-room" class="flex flex-col items-center text-stone-400 hover:text-stone-600 font-medium text-xs py-1 px-3">
+      <i data-lucide="home" class="w-5 h-5 mb-0.5"></i>
+      <span>共同小窩</span>
+    </button>
+  </nav>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: 查看物件回憶與日記 (ROOM OBJECT MEMORY INSPECTION & COMMENTS) -->
+  <!-- ======================================================== -->
+  <div id="memoryInspectModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-4 shadow-2xl relative space-y-3 max-h-[92vh] flex flex-col overflow-hidden">
+      <button onclick="closeMemoryInspect()" class="absolute top-3 right-3 text-stone-400 hover:text-stone-600 p-1 rounded-full z-10">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="overflow-y-auto custom-scrollbar flex-1 space-y-3 pr-1">
+        <!-- Memory Sticker Image: 完全按照原始自然長寬比，不拉伸不壓縮 -->
+        <div class="w-full bg-stone-50/80 rounded-2xl border border-stone-100 flex items-center justify-center p-2.5 overflow-hidden">
+          <img id="inspectImg" src="" class="block max-w-full max-h-[50vh] w-auto h-auto object-contain rounded-xl shadow-sm" alt="回憶照片">
+        </div>
+
+        <!-- Details -->
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between">
+            <h4 id="inspectTitle" class="text-sm font-bold text-stone-800">記憶標題</h4>
+            <span id="inspectAuthorBadge" class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-orange-100 text-orange-700">我佈置的</span>
+          </div>
+          <div class="flex items-center text-xs text-stone-400 space-x-2">
+            <i data-lucide="calendar" class="w-3.5 h-3.5 text-stone-400"></i>
+            <span id="inspectDate">2026-05-20</span>
+          </div>
+        </div>
+
+        <!-- Diary Passage -->
+        <div class="bg-amber-50/60 border border-amber-200/80 rounded-2xl p-3 text-xs text-stone-700 leading-relaxed font-serif">
+          <p id="inspectDiary" class="whitespace-pre-wrap">尚無日記紀錄。</p>
+        </div>
+
+        <!-- Action for owner: Only Heart Recycling & Return (No Slider/Rotation clutter) -->
+        <div id="inspectOwnerControls" class="flex items-center justify-between bg-stone-50 p-2.5 rounded-2xl border border-stone-200">
+          <div class="text-[11px] text-stone-500">
+            <span>👋 不想擺放了嗎？</span>
+          </div>
+          <button onclick="deleteInspectedObject()" class="py-1.5 px-3 bg-rose-50 text-rose-600 border border-rose-200 rounded-xl text-xs font-semibold flex items-center justify-center space-x-1 active:bg-rose-100 shadow-sm" title="撤除可回收一半愛心 (5顆)">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            <span>收回物件 (+5❤️)</span>
+          </button>
+        </div>
+
+        <!-- Partner Notice if not owner -->
+        <div id="inspectNonOwnerNotice" class="hidden text-center p-2 rounded-xl bg-stone-100 text-stone-500 text-[11px]">
+          🔒 這是對象佈置的回憶（可以在下方留言互動哦！）
+        </div>
+
+        <!-- 6. DIARY COMMENTS / MESSAGE BOARD SECTION -->
+        <div class="space-y-2 border-t border-stone-200 pt-3">
+          <div class="flex items-center justify-between">
+            <h5 class="text-xs font-bold text-stone-700 flex items-center space-x-1">
+              <i data-lucide="message-circle" class="w-3.5 h-3.5 text-brand-500"></i>
+              <span>專屬留言板 (<span id="inspectCommentCount">0</span>)</span>
+            </h5>
+            <span class="text-[10px] text-stone-400">寫下給這段回憶的話</span>
+          </div>
+
+          <!-- Comment list container -->
+          <div id="inspectCommentList" class="space-y-1.5 max-h-36 overflow-y-auto custom-scrollbar">
+            <!-- Rendered dynamically -->
+          </div>
+
+          <!-- Add comment input form -->
+          <div class="flex items-center space-x-1.5 pt-1">
+            <input type="text" id="inspectNewCommentInput" placeholder="留下暖心悄悄話..." class="flex-1 text-xs py-1.5 px-2.5 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:border-brand-500">
+            <button onclick="submitMemoryComment()" class="px-3 py-1.5 bg-brand-500 text-white font-bold rounded-xl text-xs shadow-sm active:scale-95 transition shrink-0">
+              送出
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: 自製手繪貼圖工坊 (STICKER CUTOUT & MEMORY CREATOR) -->
+  <!-- ======================================================== -->
+  <div id="imageEditorModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-4 shadow-2xl flex flex-col max-h-[94vh] overflow-hidden space-y-3">
+      <div class="flex items-center justify-between border-b border-stone-100 pb-2 shrink-0">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="wand-2" class="w-4 h-4 text-brand-500"></i>
+          <h3 class="font-bold text-stone-800 text-sm">自製貼圖工坊</h3>
+        </div>
+        <button onclick="closeImageEditor()" class="text-stone-400 hover:text-stone-600 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="overflow-y-auto custom-scrollbar flex-1 space-y-3 pr-1">
+        <!-- Cutout Mode Selector -->
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <button id="modeDrawBtn" onclick="setCutoutMode('custom')" class="py-2 border-2 border-brand-500 bg-brand-50 text-brand-700 font-bold rounded-xl text-center active:scale-95 transition">
+            ✏️ 手繪圈選摳圖
+          </button>
+          <button id="modeSquareBtn" onclick="setCutoutMode('frame')" class="py-2 border border-stone-200 bg-white text-stone-600 font-medium rounded-xl text-center active:scale-95 transition">
+            🖼️ 拍立得方框
+          </button>
+        </div>
+
+        <!-- Drawing Canvas Area -->
+        <div class="relative bg-stone-100 rounded-2xl overflow-hidden flex flex-col items-center justify-center border border-stone-200">
+          <canvas id="cutoutCanvas" class="w-full aspect-square touch-none cursor-crosshair block bg-stone-900/5"></canvas>
+          <div class="absolute bottom-2 left-2 right-2 flex justify-between items-center pointer-events-none">
+            <span id="canvasDrawHint" class="bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full backdrop-blur-sm">
+              用手指畫一圈，圈起想摳出的區域
+            </span>
+            <button onclick="resetCutoutPath()" class="pointer-events-auto bg-white/90 hover:bg-white text-stone-700 text-[11px] px-2 py-0.5 rounded-lg border border-stone-300 font-medium active:scale-95 shadow-sm">
+              重新劃定
+            </button>
+          </div>
+        </div>
+
+        <!-- White Border Toggle Option -->
+        <div class="flex items-center justify-between p-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs">
+          <div class="flex items-center space-x-1.5">
+            <i data-lucide="scissors" class="w-4 h-4 text-brand-500"></i>
+            <span class="font-bold text-stone-700">保留立體白色邊框</span>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="stickerBorderToggle" class="sr-only peer">
+            <div class="w-9 h-5 bg-stone-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brand-500"></div>
+          </label>
+        </div>
+
+        <!-- Memory Form Inputs -->
+        <div class="space-y-2 text-xs">
+          <div>
+            <label class="font-bold text-stone-700 block mb-0.5">回憶標題</label>
+            <input type="text" id="stickerTitleInput" placeholder="例如：午後公園散步" class="w-full py-1.5 px-2.5 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:border-brand-500">
+          </div>
+          <div>
+            <label class="font-bold text-stone-700 block mb-0.5">活動日期</label>
+            <input type="date" id="stickerDateInput" class="w-full py-1.5 px-2.5 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:border-brand-500 text-stone-700">
+          </div>
+          <div>
+            <label class="font-bold text-stone-700 block mb-0.5">這天的日記 / 故事</label>
+            <textarea id="stickerDiaryInput" rows="2" placeholder="寫下一句今天溫暖的小心願或故事..." class="w-full p-2 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:border-brand-500 font-serif"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <div class="pt-2 border-t border-stone-100 shrink-0">
+        <button onclick="finishStickerCrafting()" class="w-full py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-xl text-xs shadow-sm active:scale-95 transition flex items-center justify-center space-x-1">
+          <i data-lucide="check" class="w-4 h-4"></i>
+          <span>消耗 1 券，完成手繪貼圖</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: 多小窩管理員 (ROOM MANAGER & CREATOR) -->
+  <!-- ======================================================== -->
+  <div id="roomManagerModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-4 shadow-2xl flex flex-col max-h-[85vh]">
+      <div class="flex items-center justify-between border-b border-stone-100 pb-2 mb-3">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="home" class="w-5 h-5 text-brand-500"></i>
+          <h3 class="font-bold text-stone-800 text-sm">我的多個共享小窩</h3>
+        </div>
+        <button onclick="closeRoomManagerModal()" class="text-stone-400 hover:text-stone-600 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Room List -->
+      <div class="flex-1 overflow-y-auto custom-scrollbar space-y-2 mb-3 pr-1" id="roomsListContainer">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Create New Room Accordion / Button -->
+      <div class="border-t border-stone-100 pt-3 space-y-2">
+        <button onclick="toggleNewRoomForm()" class="w-full py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold rounded-xl text-xs flex items-center justify-center space-x-1 border border-amber-200 transition">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          <span>與新對象開啟新小窩</span>
+        </button>
+
+        <div id="newRoomForm" class="hidden bg-stone-50 p-3 rounded-2xl border border-stone-200 space-y-2">
+          <div>
+            <label class="text-[11px] font-bold text-stone-600 block mb-0.5">小窩名稱</label>
+            <input type="text" id="newRoomNameInput" placeholder="例如：與小美的秘密基地" class="w-full text-xs py-1.5 px-2 bg-white border border-stone-200 rounded-xl focus:outline-none focus:border-brand-500">
+          </div>
+          <div>
+            <label class="text-[11px] font-bold text-stone-600 block mb-0.5">共同共享對象名稱 / 稱呼</label>
+            <input type="text" id="newRoomPartnerInput" placeholder="例如：小美" class="w-full text-xs py-1.5 px-2 bg-white border border-stone-200 rounded-xl focus:outline-none focus:border-brand-500">
+          </div>
+          <div class="flex space-x-2 pt-1">
+            <button onclick="createNewRoom()" class="flex-1 py-1.5 bg-brand-500 text-white rounded-xl text-xs font-bold shadow-sm">
+              創建小窩
+            </button>
+            <button onclick="joinRoomByShareCode()" class="flex-1 py-1.5 bg-stone-800 text-white rounded-xl text-xs font-bold shadow-sm">
+              輸入代碼加入
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: 雙人小窩共享與同步 (ROOM SYNC & PEER SHARE) -->
+  <!-- ======================================================== -->
+  <div id="syncDataModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-4 shadow-2xl space-y-3">
+      <div class="flex items-center justify-between border-b border-stone-100 pb-2">
+        <div class="flex items-center space-x-1.5 font-bold text-stone-800 text-sm">
+          <i data-lucide="refresh-cw" class="w-4 h-4 text-brand-500"></i>
+          <span>共享同一個小窩：<span id="syncModalRoomName" class="text-brand-600">小窩</span></span>
+        </div>
+        <button onclick="closeSyncDataModal()" class="text-stone-400 hover:text-stone-600 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="bg-amber-50 p-2.5 rounded-2xl border border-amber-200 text-[11px] text-amber-900 leading-tight">
+        ✨ <strong>真正共享同一個小窩</strong>：兩人輸入相同的小窩邀請碼即可共同擁有此小窩。無論誰移動佈置、撰寫日記或投入愛心，雙方小窩都會合為一體！
+      </div>
+
+      <div>
+        <label class="text-[11px] font-bold text-stone-600 block mb-1">本小窩專屬邀請碼 (發給對方)</label>
+        <div class="flex items-center space-x-2">
+          <input type="text" id="currentRoomShareId" readonly class="w-full bg-stone-100 font-mono text-center font-bold text-stone-800 text-xs py-2 px-2 rounded-xl border border-stone-200">
+          <button onclick="copyCurrentRoomShareId()" class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 rounded-xl text-xs font-bold shrink-0 shadow-sm active:scale-95">
+            複製
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <label class="text-[11px] font-bold text-stone-600 block mb-1">快速雙向合併 (傳送小窩最新佈置包)</label>
+        <button onclick="exportAndCopySyncPayload()" class="w-full py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl text-xs font-bold active:scale-95 transition flex items-center justify-center space-x-1 border border-stone-200">
+          <i data-lucide="copy" class="w-3.5 h-3.5 text-stone-500"></i>
+          <span>複製我的小窩佈置碼</span>
+        </button>
+      </div>
+
+      <div class="pt-2 border-t border-stone-100">
+        <label class="text-[11px] font-bold text-stone-600 block mb-1">貼上對方的佈置碼以合併進同一個小窩</label>
+        <textarea id="importPayloadInput" rows="2" placeholder="在此貼上對方傳來的小窩代碼..." class="w-full text-xs p-2 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:border-brand-500 font-mono"></textarea>
+        <button onclick="importPartnerSyncPayload()" class="w-full mt-2 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-bold active:scale-95 transition">
+          同步合併至此小窩
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: 自訂壁紙與地板 (BACKGROUND THEME & TEXTURE CUSTOMIZER) -->
+  <!-- ======================================================== -->
+  <div id="bgThemeModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-4 shadow-2xl space-y-4 max-h-[90vh] flex flex-col overflow-hidden">
+      <div class="flex items-center justify-between border-b border-stone-100 pb-2">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="palette" class="w-5 h-5 text-amber-500"></i>
+          <h3 class="font-bold text-stone-800 text-sm">裝潢小窩壁紙與地板</h3>
+        </div>
+        <button onclick="closeBackgroundThemeModal()" class="text-stone-400 hover:text-stone-600 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="overflow-y-auto custom-scrollbar flex-1 space-y-4 pr-1">
+        <!-- 1. Preset Themes -->
+        <div>
+          <label class="text-xs font-bold text-stone-700 block mb-2">精選裝潢風格</label>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <button onclick="applyPresetTheme('warmWood')" class="p-2.5 rounded-2xl border border-amber-200 bg-amber-50/60 hover:bg-amber-100/60 text-left active:scale-95 transition">
+              <div class="font-bold text-stone-800 mb-0.5">🪵 溫暖木質調</div>
+              <div class="text-[10px] text-stone-500">米白網格牆面 + 溫潤楓木地板</div>
+            </button>
+            <button onclick="applyPresetTheme('tatami')" class="p-2.5 rounded-2xl border border-stone-200 bg-emerald-50/50 hover:bg-emerald-100/50 text-left active:scale-95 transition">
+              <div class="font-bold text-stone-800 mb-0.5">🍵 日式榻榻米</div>
+              <div class="text-[10px] text-stone-500">淺茶素色壁面 + 藺草青綠地板</div>
+            </button>
+            <button onclick="applyPresetTheme('pastelGarden')" class="p-2.5 rounded-2xl border border-pink-200 bg-pink-50/50 hover:bg-pink-100/50 text-left active:scale-95 transition">
+              <div class="font-bold text-stone-800 mb-0.5">🌸 浪漫花園風</div>
+              <div class="text-[10px] text-stone-500">柔和粉桃色調 + 淺灰石瓷磚</div>
+            </button>
+            <button onclick="applyPresetTheme('nightCozy')" class="p-2.5 rounded-2xl border border-indigo-200 bg-indigo-50/50 hover:bg-indigo-100/50 text-left active:scale-95 transition">
+              <div class="font-bold text-stone-800 mb-0.5">🌙 靜夜星空藍</div>
+              <div class="text-[10px] text-stone-500">午夜藍星空壁 + 深胡桃木地板</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. Custom Upload for Wallpaper -->
+        <div class="p-3 bg-stone-50 border border-stone-200 rounded-2xl space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-stone-800 flex items-center">
+              <i data-lucide="image" class="w-3.5 h-3.5 mr-1 text-brand-500"></i>
+              自訂滿板壁紙 (需 15❤️)
+            </span>
+            <button onclick="resetCustomWallpaper()" class="text-[10px] text-stone-400 hover:text-stone-600">恢復預設</button>
+          </div>
+          <label class="cursor-pointer flex items-center justify-center space-x-2 w-full py-2 bg-white border border-dashed border-stone-300 rounded-xl text-xs font-medium text-stone-600 active:scale-95 transition shadow-sm hover:border-brand-400">
+            <i data-lucide="upload" class="w-3.5 h-3.5 text-brand-500"></i>
+            <span>上傳壁紙圖片素材</span>
+            <input type="file" accept="image/*" class="hidden" onchange="handleCustomBgUpload(event, 'wallpaper')">
+          </label>
+        </div>
+
+        <!-- 3. Custom Upload for Flooring -->
+        <div class="p-3 bg-stone-50 border border-stone-200 rounded-2xl space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-stone-800 flex items-center">
+              <i data-lucide="layers" class="w-3.5 h-3.5 mr-1 text-emerald-500"></i>
+              自訂滿板地板 (需 15❤️)
+            </span>
+            <button onclick="resetCustomFlooring()" class="text-[10px] text-stone-400 hover:text-stone-600">恢復預設</button>
+          </div>
+          <label class="cursor-pointer flex items-center justify-center space-x-2 w-full py-2 bg-white border border-dashed border-stone-300 rounded-xl text-xs font-medium text-stone-600 active:scale-95 transition shadow-sm hover:border-emerald-400">
+            <i data-lucide="upload" class="w-3.5 h-3.5 text-emerald-500"></i>
+            <span>上傳地板圖片素材</span>
+            <input type="file" accept="image/*" class="hidden" onchange="handleCustomBgUpload(event, 'flooring')">
+          </label>
+        </div>
+      </div>
+
+      <div class="pt-2 border-t border-stone-100">
+        <button onclick="closeBackgroundThemeModal()" class="w-full py-2.5 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-xl text-xs shadow-sm active:scale-95 transition">
+          完成裝潢
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: 雙人配對與連線 (PAIRING MODAL) -->
+  <!-- ========================================== -->
+  <div id="pairingModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-4 shadow-2xl space-y-3">
+      <div class="flex items-center justify-between border-b border-stone-100 pb-2">
+        <div class="flex items-center space-x-1.5 font-bold text-stone-800 text-sm">
+          <i data-lucide="rss" class="w-4 h-4 text-brand-500"></i>
+          <span>雙人配對連線</span>
+        </div>
+        <button onclick="closePairingModal()" class="text-stone-400 hover:text-stone-600 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div>
+        <label class="text-[11px] font-bold text-stone-600 block mb-1">我的專屬配對碼</label>
+        <div class="flex items-center space-x-2">
+          <input type="text" id="myPairingCode" readonly class="w-full bg-stone-100 font-mono text-center font-bold text-stone-800 text-sm py-2 px-2 rounded-xl border border-stone-200">
+          <button onclick="copyMyPairingCode()" class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-2 rounded-xl text-xs font-bold shrink-0 shadow-sm active:scale-95">
+            複製
+          </button>
+        </div>
+      </div>
+
+      <div class="pt-2 border-t border-stone-100">
+        <label class="text-[11px] font-bold text-stone-600 block mb-1">輸入對方的配對碼</label>
+        <div class="flex items-center space-x-2">
+          <input type="text" id="partnerCodeInput" placeholder="例如 COZY-882" class="w-full bg-stone-50 font-mono text-center text-xs py-2 px-2 rounded-xl border border-stone-200 uppercase focus:outline-none focus:border-brand-500">
+          <button onclick="savePartnerPairingCode()" class="bg-brand-500 hover:bg-brand-600 text-white px-3 py-2 rounded-xl text-xs font-bold shrink-0 shadow-sm active:scale-95">
+            配對
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: 截圖預覽與分享 (SCREENSHOT SHARING) -->
+  <!-- ========================================== -->
+  <div id="screenshotModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-4 shadow-2xl flex flex-col space-y-3 max-h-[92vh] overflow-hidden">
+      <div class="flex items-center justify-between border-b border-stone-100 pb-2">
+        <div class="flex items-center space-x-1.5 font-bold text-stone-800 text-sm">
+          <i data-lucide="camera" class="w-4 h-4 text-rose-500"></i>
+          <span>小窩紀念拍立得</span>
+        </div>
+        <button onclick="closeScreenshotModal()" class="text-stone-400 hover:text-stone-600 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto custom-scrollbar flex items-center justify-center bg-stone-100 rounded-2xl p-2 border border-stone-200">
+        <img id="screenshotPreviewImg" src="" class="max-w-full max-h-[55vh] object-contain rounded-xl shadow-md" alt="小窩拍立得">
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 pt-1">
+        <button onclick="downloadScreenshotImage()" class="py-2.5 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold rounded-xl text-xs active:scale-95 transition flex items-center justify-center space-x-1.5 border border-stone-200">
+          <i data-lucide="download" class="w-4 h-4"></i>
+          <span>儲存照片</span>
+        </button>
+        <button onclick="shareScreenshotNative()" class="py-2.5 bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-xl text-xs active:scale-95 transition flex items-center justify-center space-x-1.5 shadow-sm">
+          <i data-lucide="share-2" class="w-4 h-4"></i>
+          <span>分享給對方</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: 小窩家具工坊 (FURNITURE CATALOG & COLOR SCHEMES) -->
+  <!-- ======================================================== -->
+  <div id="furnitureCatalogModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-4 shadow-2xl flex flex-col max-h-[92vh] overflow-hidden space-y-3">
+      <div class="flex items-center justify-between border-b border-stone-100 pb-2 shrink-0">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="armchair" class="w-4 h-4 text-brand-500"></i>
+          <h3 class="font-bold text-stone-800 text-sm">小窩家具庫</h3>
+        </div>
+        <button onclick="closeFurnitureModal()" class="text-stone-400 hover:text-stone-600 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="overflow-y-auto custom-scrollbar flex-1 space-y-3 pr-1">
+        <!-- Color Scheme Picker -->
+        <div>
+          <label class="text-[11px] font-bold text-stone-600 block mb-1.5">家具色系（搭配小窩裝潢）</label>
+          <div class="grid grid-cols-5 gap-1.5" id="furnitureColorPaletteContainer">
+            <!-- Dynamically populated colors -->
+          </div>
+        </div>
+
+        <!-- Furniture Item Grid -->
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <label class="text-[11px] font-bold text-stone-600">選擇家具（留有充足平面可擺放貼圖道具）</label>
+            <span class="text-[10px] text-stone-400">消耗 5 ❤️ 佈置</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2" id="furnitureListContainer">
+            <!-- Populated with table, bookshelf, credenza, sofa, chairs, desk, rugs -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: 時光日曆回憶錄 (ROOM DIARY & MEMORY TIMELINE) -->
+  <!-- ======================================================== -->
+  <div id="diariesTimelineModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-4 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden space-y-3">
+      <div class="flex items-center justify-between border-b border-stone-100 pb-2 shrink-0">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="calendar" class="w-4 h-4 text-brand-500"></i>
+          <h3 class="font-bold text-stone-800 text-sm">時光回憶日曆</h3>
+        </div>
+        <button onclick="closeDiariesTimelineModal()" class="text-stone-400 hover:text-stone-600 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Filter Tabs -->
+      <div class="flex space-x-1.5 bg-stone-100 p-1 rounded-xl text-xs font-medium shrink-0">
+        <button onclick="filterDiariesTimeline('all')" id="timelineFilterAll" class="flex-1 py-1 text-center rounded-lg bg-white text-stone-800 font-bold shadow-xs">全部回憶</button>
+        <button onclick="filterDiariesTimeline('me')" id="timelineFilterMe" class="flex-1 py-1 text-center rounded-lg text-stone-500">我的日記</button>
+        <button onclick="filterDiariesTimeline('partner')" id="timelineFilterPartner" class="flex-1 py-1 text-center rounded-lg text-stone-500">對方的日記</button>
+      </div>
+
+      <!-- Timeline List -->
+      <div class="overflow-y-auto custom-scrollbar flex-1 space-y-2.5 pr-1" id="diariesTimelineList">
+        <!-- Chronological diaries populated here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    // ==========================================
+    // 1. STATE & MULTI-ROOM STORAGE
+    // ==========================================
+    const DEFAULT_DATA = {
+      steps: 0,
+      tickets: 2,
+      hearts: 30, // Global walking hearts pool
+      pairedCode: null,
+      myCode: 'COZY-' + Math.floor(100 + Math.random() * 900),
+      isPartnerNearby: false,
+      activeRoomId: 'room_default',
+      // Multi-room support: multiple rooms with different people
+      rooms: [
+        {
+          id: 'room_default',
+          name: '甜蜜雙人小窩',
+          partnerName: '小美',
+          partnerCode: 'COZY-882',
+          heartsPool: 20,
+          placedDecorations: [
+            {
+              id: 'def_item_1',
+              name: '草莓起司蛋糕',
+              url: 'https://images.unsplash.com/photo-1533134242443-d4fd215305ad?w=150&auto=format&fit=crop&q=60',
+              originalPhoto: 'https://images.unsplash.com/photo-1533134242443-d4fd215305ad?w=400&auto=format&fit=crop&q=80',
+              date: '2026-05-12',
+              diary: '在巷弄裡的甜點店點了最喜歡的草莓蛋糕，那天午後陽光剛剛好，我們聊了好多未來的旅行計畫。',
+              creator: 'me',
+              x: 50,
+              y: 90,
+              rotation: 0
+            },
+            {
+              id: 'def_item_2',
+              name: '多肉盆栽小綠',
+              url: 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=150&auto=format&fit=crop&q=60',
+              originalPhoto: 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=400&auto=format&fit=crop&q=80',
+              date: '2026-06-01',
+              diary: '在花市一起選的小盆栽，說好要輪流澆水，希望小窩跟它一樣綠意盎然。',
+              creator: 'partner',
+              x: 180,
+              y: 130,
+              rotation: 12
+            }
+          ]
+        }
+      ],
+      stickers: [
+        {
+          id: 'def_1',
+          name: '草莓起司蛋糕',
+          url: 'https://images.unsplash.com/photo-1533134242443-d4fd215305ad?w=150&auto=format&fit=crop&q=60',
+          originalPhoto: 'https://images.unsplash.com/photo-1533134242443-d4fd215305ad?w=400&auto=format&fit=crop&q=80',
+          date: '2026-05-12',
+          diary: '在巷弄裡的甜點店點了最喜歡的草莓蛋糕，那天午後陽光剛剛好，我們聊了好多未來的旅行計畫。',
+          creator: 'me'
+        },
+        {
+          id: 'def_2',
+          name: '多肉盆栽小綠',
+          url: 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=150&auto=format&fit=crop&q=60',
+          originalPhoto: 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=400&auto=format&fit=crop&q=80',
+          date: '2026-06-01',
+          diary: '在花市一起選的小盆栽，說好要輪流澆水，希望小窩跟它一樣綠意盎然。',
+          creator: 'partner'
+        }
+      ]
+    };
+
+    // Load state safely & migrate structure if needed
+    let appState = DEFAULT_DATA;
+    try {
+      const saved = localStorage.getItem('cozystep_state');
+      if (saved) {
+        appState = JSON.parse(saved);
+      }
+    } catch (e) {
+      console.warn('localStorage read error:', e);
+    }
+    appState.steps = Number(appState.steps) || 0;
+    appState.tickets = Number(appState.tickets) || 0;
+    appState.hearts = Number(appState.hearts) || 0;
+
+    if (!appState.rooms || !Array.isArray(appState.rooms)) {
+      const oldDecorations = appState.placedDecorations || DEFAULT_DATA.rooms[0].placedDecorations;
+      appState.rooms = [
+        {
+          id: 'room_default',
+          name: '甜蜜雙人小窩',
+          partnerName: '伴侶',
+          partnerCode: appState.pairedCode || 'COZY-882',
+          heartsPool: appState.hearts || 20,
+          placedDecorations: oldDecorations
+        }
+      ];
+      appState.activeRoomId = 'room_default';
+      delete appState.placedDecorations;
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem('cozystep_state', JSON.stringify(appState));
+      } catch (err) {
+        console.warn('Storage save failed:', err);
+      }
+    }
+
+    function getActiveRoom() {
+      let room = appState.rooms.find(r => r.id === appState.activeRoomId);
+      if (!room) {
+        room = appState.rooms[0];
+        appState.activeRoomId = room.id;
+      }
+      return room;
+    }
+
+    // Nurturing Timer State
+    let nurtureTimerInterval = null;
+    let nurtureSeconds = 0;
+    let gainedSessionHearts = 0;
+    let isAmbientPlaying = false;
+    let audioCtx = null;
+
+    // Freehand Drawing Cutout State
+    let cutoutPoints = [];
+    let isDrawingCutout = false;
+    let rawUploadedImg = null;
+    let cutoutMode = 'custom';
+    let inspectedItemId = null;
+
+    const PLACEMENT_HEART_COST = 10; // 每個貼圖佈置需要10顆愛心
+    const BG_HEART_COST = 15;        // 更換滿板壁紙/地板需15顆愛心
+    const RECYCLE_HEART_REWARD = 5;  // 撤除佈置回收一半數量愛心
+    const FURNITURE_HEART_COST = 5;  // 佈置家具需 5 顆愛心
+
+    // Screenshot cache
+    let currentScreenshotDataUrl = null;
+
+    // Room Dimensions & Viewport State
+    const ROOM_WIDTH = 1600;
+    const ROOM_HEIGHT = 1200;
+
+    let roomViewport = {
+      scale: 1,
+      x: 0,
+      y: 0,
+      minScale: 0.3,
+      maxScale: 2.2
+    };
+
+    // ==========================================
+    // 2. INITIALIZATION
+    // ==========================================
+    function initializeApp() {
+      if (window.lucide && typeof lucide.createIcons === 'function') {
+        lucide.createIcons();
+      }
+      const myCodeInput = document.getElementById('myPairingCode');
+      if (myCodeInput) myCodeInput.value = appState.myCode;
+      
+      const todayStr = new Date().toISOString().split('T')[0];
+      const dateInput = document.getElementById('stickerDateInput');
+      if (dateInput) dateInput.value = todayStr;
+
+      // Bind pairing button trigger
+      const pairBtn = document.getElementById('pairingModalBtn');
+      if (pairBtn) {
+        pairBtn.addEventListener('click', openPairingModal);
+      }
+
+      updateUI();
+      renderStickers();
+      restoreRoomItems();
+      applyRoomBackgrounds();
+      initRoomZoomAndPan();
+      setTimeout(() => fitRoomToScreen(true), 100);
+      updateContributionRatio();
+      initPedometerSensors();
+      initCutoutCanvas();
+      updateWallCalendar();
+
+      window.addEventListener('resize', () => {
+        updateMinScale();
+        clampViewportPosition();
+        updateRoomViewportTransform();
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      window.addEventListener('DOMContentLoaded', initializeApp);
+    } else {
+      initializeApp();
+    }
+
+    function openPairingModal() {
+      const modal = document.getElementById('pairingModal');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closePairingModal() {
+      const modal = document.getElementById('pairingModal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function copyMyPairingCode() {
+      const el = document.getElementById('myPairingCode');
+      if (!el) return;
+      el.select();
+      document.execCommand('copy');
+      showToast('📋 已複製我的配對碼！');
+    }
+
+    function savePartnerPairingCode() {
+      const input = document.getElementById('partnerCodeInput');
+      if (!input || !input.value.trim()) return;
+      const code = input.value.trim().toUpperCase();
+      const currentRoom = getActiveRoom();
+      currentRoom.partnerCode = code;
+      saveState();
+      updateUI();
+      closePairingModal();
+      showToast(`💕 已與「${code}」成功連結！`);
+    }
+
+    function showToast(msg) {
+      let toast = document.getElementById('toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'toast';
+        toast.className = 'fixed top-5 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 translate-y-[-10px] transition-all duration-300 bg-stone-900/90 text-white text-xs font-medium py-2 px-4 rounded-full shadow-lg backdrop-blur-sm max-w-[90vw] text-center';
+        document.body.appendChild(toast);
+      }
+      toast.innerText = msg;
+      toast.classList.remove('opacity-0', 'translate-y-[-10px]');
+      toast.classList.add('opacity-100', 'translate-y-0');
+      clearTimeout(toast._timeout);
+      toast._timeout = setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-[-10px]');
+        toast.classList.remove('opacity-100', 'translate-y-0');
+      }, 2500);
+    }
+
+    function updateUI() {
+      const currentRoom = getActiveRoom();
+
+      // Step numbers & currencies
+      document.getElementById('headerStepCounter').innerText = appState.steps.toLocaleString();
+      document.getElementById('walkStepDisplay').innerText = appState.steps.toLocaleString();
+      document.getElementById('headerHeartCounter').innerText = appState.hearts;
+      document.getElementById('ticketSummary').innerText = `可兌換次數：${appState.tickets} 次`;
+      document.getElementById('stickerTicketBadge').innerText = `自製票券：${appState.tickets}`;
+      document.getElementById('claimTicketBtn').disabled = (appState.steps < 1000);
+
+      // Room Header Badges
+      document.getElementById('currentRoomShortBadge').innerText = currentRoom.name;
+      document.getElementById('roomTitleDisplay').innerText = currentRoom.name;
+      const partnerTag = document.getElementById('roomPartnerTag');
+      if (partnerTag) partnerTag.innerText = `對象：${currentRoom.partnerName || '未指定'}`;
+
+      // Circle Progress
+      const maxTarget = 5000;
+      const progress = Math.min(appState.steps / maxTarget, 1);
+      const circumference = 2 * Math.PI * 100;
+      const offset = circumference - (progress * circumference);
+      document.getElementById('stepCircleProgress').style.strokeDashoffset = offset;
+
+      // Partner Proximity Bar
+      const partnerDot = document.getElementById('partnerStatusDot');
+      const partnerText = document.getElementById('partnerStatusText');
+      const proximityMsg = document.getElementById('proximityMessage');
+
+      const targetPartner = currentRoom.partnerName || '伴侶';
+      if (appState.isPartnerNearby) {
+        partnerDot.className = 'w-2 h-2 rounded-full bg-emerald-500 inline-block';
+        partnerText.innerText = `${targetPartner} 在身旁`;
+        proximityMsg.innerText = `與 ${targetPartner} 相處培育中`;
+      } else if (currentRoom.partnerCode) {
+        partnerDot.className = 'w-2 h-2 rounded-full bg-amber-400 inline-block';
+        partnerText.innerText = `${targetPartner}`;
+        proximityMsg.innerText = `等待與「${targetPartner}」相聚`;
+      } else {
+        partnerDot.className = 'w-2 h-2 rounded-full bg-stone-300 inline-block';
+        partnerText.innerText = '單人漫遊中';
+        proximityMsg.innerText = '單人漫遊中';
+      }
+
+      const countEl = document.getElementById('roomItemCount');
+      if (countEl) countEl.innerText = currentRoom.placedDecorations.length;
+      updateContributionRatio();
+    }
+
+    // ==========================================
+    // 3. MULTI-ROOM MANAGEMENT (多小窩切換與建立)
+    // ==========================================
+    function openRoomManagerModal() {
+      renderRoomsList();
+      document.getElementById('roomManagerModal').classList.remove('hidden');
+    }
+
+    function closeRoomManagerModal() {
+      document.getElementById('roomManagerModal').classList.add('hidden');
+    }
+
+    function toggleNewRoomForm() {
+      const form = document.getElementById('newRoomForm');
+      form.classList.toggle('hidden');
+    }
+
+    function renderRoomsList() {
+      const container = document.getElementById('roomsListContainer');
+      container.innerHTML = '';
+
+      appState.rooms.forEach(room => {
+        const isActive = (room.id === appState.activeRoomId);
+        const card = document.createElement('div');
+        card.className = `p-3 rounded-2xl border transition flex items-center justify-between ${
+          isActive ? 'border-brand-500 bg-orange-50/70 shadow-sm' : 'border-stone-200 bg-white hover:bg-stone-50'
+        }`;
+
+        card.innerHTML = `
+          <div class="flex-1 cursor-pointer" onclick="selectActiveRoom('${room.id}')">
+            <div class="flex items-center space-x-2">
+              <span class="text-sm font-bold text-stone-800">${room.name}</span>
+              ${isActive ? '<span class="text-[9px] bg-brand-500 text-white font-bold px-1.5 py-0.2 rounded-full">使用中</span>' : ''}
+            </div>
+            <div class="flex items-center text-[11px] text-stone-500 space-x-2 mt-0.5">
+              <span>對象：${room.partnerName || '雙人'}</span>
+              <span>•</span>
+              <span>擺設：${room.placedDecorations.length} 件</span>
+            </div>
+          </div>
+          <div class="flex items-center space-x-1">
+            <button onclick="shareRoomCodePrompt('${room.id}')" class="p-1.5 text-stone-400 hover:text-brand-500 active:scale-95">
+              <i data-lucide="share-2" class="w-4 h-4"></i>
+            </button>
+            ${appState.rooms.length > 1 ? `
+              <button onclick="deleteRoom('${room.id}')" class="p-1.5 text-stone-300 hover:text-rose-500 active:scale-95">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            ` : ''}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+      lucide.createIcons();
+    }
+
+    function selectActiveRoom(roomId) {
+      appState.activeRoomId = roomId;
+      saveState();
+      restoreRoomItems();
+      updateUI();
+      closeRoomManagerModal();
+      showToast(`🏡 已切換至「${getActiveRoom().name}」`);
+    }
+
+    function createNewRoom() {
+      const nameInput = document.getElementById('newRoomNameInput');
+      const partnerInput = document.getElementById('newRoomPartnerInput');
+      const roomName = nameInput.value.trim() || '我們的新小窩';
+      const partnerName = partnerInput.value.trim() || '新伴侶';
+
+      const newId = 'room_' + Date.now().toString(36);
+      const newRoom = {
+        id: newId,
+        name: roomName,
+        partnerName: partnerName,
+        partnerCode: 'COZY-' + Math.floor(100 + Math.random() * 900),
+        heartsPool: 0,
+        placedDecorations: []
+      };
+
+      appState.rooms.push(newRoom);
+      appState.activeRoomId = newId;
+      saveState();
+
+      nameInput.value = '';
+      partnerInput.value = '';
+      document.getElementById('newRoomForm').classList.add('hidden');
+
+      renderRoomsList();
+      restoreRoomItems();
+      updateUI();
+      closeRoomManagerModal();
+      showToast(`🎉 成功開啟與「${partnerName}」的專屬小窩！`);
+    }
+
+    function deleteRoom(roomId) {
+      if (appState.rooms.length <= 1) {
+        showToast('至少需保留一個小窩！');
+        return;
+      }
+      if (confirm('確定要刪除此小窩嗎？小窩內所有的佈置將被移除。')) {
+        appState.rooms = appState.rooms.filter(r => r.id !== roomId);
+        if (appState.activeRoomId === roomId) {
+          appState.activeRoomId = appState.rooms[0].id;
+        }
+        saveState();
+        renderRoomsList();
+        restoreRoomItems();
+        updateUI();
+        showToast('小窩已刪除');
+      }
+    }
+
+    function shareRoomCodePrompt(roomId) {
+      const room = appState.rooms.find(r => r.id === roomId);
+      if (!room) return;
+      const shareText = `【步伴 CozyStep 小窩邀請】跟我一起共同佈置「${room.name}」吧！小窩代碼：${room.id}`;
+      
+      const dummy = document.createElement("textarea");
+      document.body.appendChild(dummy);
+      dummy.value = shareText;
+      dummy.select();
+      document.execCommand("copy");
+      document.body.removeChild(dummy);
+      showToast(`📋 已複製「${room.name}」邀請代碼！傳給對方即可同進同出`);
+    }
+
+    function joinRoomByShareCode() {
+      const code = prompt('請輸入對方發送的小窩代碼 (例如 room_xxxx 或完整邀請文字)：');
+      if (!code) return;
+
+      const match = code.match(/room_[a-z0-9]+/i);
+      const targetRoomId = match ? match[0] : code.trim();
+
+      const exists = appState.rooms.some(r => r.id === targetRoomId);
+      if (exists) {
+        selectActiveRoom(targetRoomId);
+        showToast('已切換至該小窩');
+        return;
+      }
+
+      // Create local linked entry for this joined shared room
+      const joinedRoom = {
+        id: targetRoomId,
+        name: '共享同一個小窩',
+        partnerName: '共同好友',
+        partnerCode: targetRoomId,
+        heartsPool: 0,
+        placedDecorations: []
+      };
+
+      appState.rooms.push(joinedRoom);
+      appState.activeRoomId = targetRoomId;
+      saveState();
+      restoreRoomItems();
+      updateUI();
+      closeRoomManagerModal();
+      showToast('🎉 成功加入對方的共享小窩！請點擊同步按鈕獲取最新佈置');
+    }
+
+    // ==========================================
+    // 4. EFFORT / CONTRIBUTION RATIO (心力天平)
+    // ==========================================
+    function updateContributionRatio() {
+      const room = getActiveRoom();
+      let myCount = 0;
+      let partnerCount = 0;
+
+      room.placedDecorations.forEach(item => {
+        if (item.creator === 'partner') {
+          partnerCount++;
+        } else {
+          myCount++;
+        }
+      });
+
+      const total = myCount + partnerCount;
+      let myRatio = 50;
+      let partnerRatio = 50;
+
+      if (total > 0) {
+        myRatio = Math.round((myCount / total) * 100);
+        partnerRatio = 100 - myRatio;
+      }
+
+      const myBar = document.getElementById('myContribBar');
+      const partnerBar = document.getElementById('partnerContribBar');
+      const myText = document.getElementById('myContribText');
+      const partnerText = document.getElementById('partnerContribText');
+
+      if (myBar && partnerBar) {
+        myBar.style.width = `${myRatio}%`;
+        partnerBar.style.width = `${partnerRatio}%`;
+        myText.innerText = `${myRatio}% (${myCount}件)`;
+        partnerText.innerText = `${partnerRatio}% (${partnerCount}件)`;
+      }
+    }
+
+    // ==========================================
+    // 5. TAB NAVIGATION
+    // ==========================================
+    function switchTab(tabId) {
+      // 切換分頁時確保關閉所有日記彈窗
+      closeMemoryInspect();
+
+      const tabs = ['walk', 'stickers', 'room'];
+      tabs.forEach(t => {
+        document.getElementById(`tab-${t}`).classList.add('hidden');
+        const navBtn = document.getElementById(`nav-${t}`);
+        navBtn.classList.remove('text-brand-500', 'font-semibold');
+        navBtn.classList.add('text-stone-400', 'font-medium');
+      });
+
+      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+      const activeNav = document.getElementById(`nav-${tabId}`);
+      activeNav.classList.add('text-brand-500', 'font-semibold');
+      activeNav.classList.remove('text-stone-400', 'font-medium');
+
+      if (tabId === 'room') {
+        restoreRoomItems();
+        updateContributionRatio();
+        // 點擊共同小窩，預設自動置中全景
+        setTimeout(() => {
+          fitRoomToScreen();
+        }, 50);
+      }
+    }
+
+    // ==========================================
+    // 6. WALKING & PEDOMETER SYSTEM
+    // ==========================================
+    function initPedometerSensors() {
+      // Setup initial listeners if permissions allow
+    }
+
+    function requestMotionPermission() {
+      if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+        DeviceMotionEvent.requestPermission().then(permissionState => {
+          if (permissionState === 'granted') {
+            bindDeviceMotion();
+            document.getElementById('sensorStatusText').innerText = '感測器運作中';
+            showToast('✅ 已啟用手機感測器！散步時自動計步');
+          } else {
+            showToast('感測器存取受限，仍可點擊模擬行走');
+          }
+        }).catch(() => {
+          showToast('無法請求感測權限');
+        });
+      } else {
+        bindDeviceMotion();
+        document.getElementById('sensorStatusText').innerText = '感測器運作中';
+        showToast('✅ 已啟用感測器，開始散步吧！');
+      }
+    }
+
+    function bindDeviceMotion() {
+      let lastAcc = 0;
+      window.addEventListener('devicemotion', (event) => {
+        const acc = event.accelerationIncludingGravity;
+        if (!acc) return;
+        const total = Math.sqrt(acc.x * acc.x + acc.y * acc.y + acc.z * acc.z);
+        const delta = Math.abs(total - lastAcc);
+        if (delta > 11) {
+          appState.steps = (Number(appState.steps) || 0) + 1;
+          saveState();
+          updateUI();
+        }
+        lastAcc = total;
+      });
+    }
+
+    function simulateSteps(amount) {
+      appState.steps = (Number(appState.steps) || 0) + Number(amount);
+      saveState();
+      updateUI();
+      showToast(`🚶 今日步數增加 +${amount} 步！`);
+    }
+
+    function simulateHearts(amount = 100) {
+      appState.hearts = (Number(appState.hearts) || 0) + Number(amount);
+      saveState();
+      updateUI();
+      showToast(`💖 測試成功！相處愛心 +${amount} 顆（目前共 ${appState.hearts} 顆）`);
+    }
+
+    function claimStepTicket() {
+      appState.steps = Number(appState.steps) || 0;
+      appState.tickets = Number(appState.tickets) || 0;
+      if (appState.steps >= 1000) {
+        appState.steps -= 1000;
+        appState.tickets += 1;
+        saveState();
+        updateUI();
+        showToast('🎉 兌換成功！獲得 1 張自製貼圖製作券');
+      } else {
+        showToast('⚠️ 步數不足 1,000 步，無法兌換');
+      }
+    }
+
+    function toggleNearnessSim() {
+      appState.isPartnerNearby = !appState.isPartnerNearby;
+      if (appState.isPartnerNearby) {
+        appState.hearts += 10;
+        showToast('💕 伴侶已在身旁！相聚贈送 10 顆相處愛心');
+      } else {
+        showToast('👋 伴侶已離開感應範圍');
+      }
+      saveState();
+      updateUI();
+    }
+
+    // ==========================================
+    // 7. STICKER CREATION & DRAWING CUTOUT
+    // ==========================================
+    function handleImageInput(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      if (appState.tickets <= 0) {
+        showToast('⚠️ 貼圖製作券不足，請先散步累計 1,000 步兌換！');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          rawUploadedImg = img;
+          document.getElementById('imageEditorModal').classList.remove('hidden');
+          resetCutoutPath();
+          drawCutoutCanvas();
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+      e.target.value = '';
+    }
+
+    function closeImageEditor() {
+      document.getElementById('imageEditorModal').classList.add('hidden');
+      rawUploadedImg = null;
+    }
+
+    function setCutoutMode(mode) {
+      cutoutMode = mode;
+      const drawBtn = document.getElementById('modeDrawBtn');
+      const squareBtn = document.getElementById('modeSquareBtn');
+      const hint = document.getElementById('canvasDrawHint');
+
+      if (mode === 'custom') {
+        drawBtn.className = 'py-2 border-2 border-brand-500 bg-brand-50 text-brand-700 font-bold rounded-xl text-center active:scale-95 transition';
+        squareBtn.className = 'py-2 border border-stone-200 bg-white text-stone-600 font-medium rounded-xl text-center active:scale-95 transition';
+        hint.innerText = '用手指畫一圈，圈起想摳出的區域';
+      } else {
+        squareBtn.className = 'py-2 border-2 border-brand-500 bg-brand-50 text-brand-700 font-bold rounded-xl text-center active:scale-95 transition';
+        drawBtn.className = 'py-2 border border-stone-200 bg-white text-stone-600 font-medium rounded-xl text-center active:scale-95 transition';
+        hint.innerText = '拍立得方形預覽（將自動裁切中心畫面）';
+      }
+      drawCutoutCanvas();
+    }
+
+    function initCutoutCanvas() {
+      const canvas = document.getElementById('cutoutCanvas');
+      if (!canvas) return;
+
+      const getCoords = (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        return {
+          x: (clientX - rect.left) * scaleX,
+          y: (clientY - rect.top) * scaleY
+        };
+      };
+
+      const startDrawing = (e) => {
+        if (cutoutMode !== 'custom') return;
+        isDrawingCutout = true;
+        cutoutPoints = [];
+        const pt = getCoords(e);
+        cutoutPoints.push(pt);
+        drawCutoutCanvas();
+      };
+
+      const keepDrawing = (e) => {
+        if (!isDrawingCutout || cutoutMode !== 'custom') return;
+        e.preventDefault();
+        const pt = getCoords(e);
+        cutoutPoints.push(pt);
+        drawCutoutCanvas();
+      };
+
+      const endDrawing = () => {
+        if (!isDrawingCutout) return;
+        isDrawingCutout = false;
+        drawCutoutCanvas();
+      };
+
+      canvas.addEventListener('mousedown', startDrawing);
+      window.addEventListener('mousemove', keepDrawing);
+      window.addEventListener('mouseup', endDrawing);
+
+      canvas.addEventListener('touchstart', startDrawing, { passive: false });
+      window.addEventListener('touchmove', keepDrawing, { passive: false });
+      window.addEventListener('touchend', endDrawing);
+    }
+
+    function resetCutoutPath() {
+      cutoutPoints = [];
+      drawCutoutCanvas();
+    }
+
+    function drawCutoutCanvas() {
+      const canvas = document.getElementById('cutoutCanvas');
+      if (!canvas || !rawUploadedImg) return;
+      const ctx = canvas.getContext('2d');
+
+      canvas.width = 400;
+      canvas.height = 400;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const minDim = Math.min(rawUploadedImg.width, rawUploadedImg.height);
+      const sx = (rawUploadedImg.width - minDim) / 2;
+      const sy = (rawUploadedImg.height - minDim) / 2;
+      ctx.drawImage(rawUploadedImg, sx, sy, minDim, minDim, 0, 0, canvas.width, canvas.height);
+
+      if (cutoutMode === 'custom' && cutoutPoints.length > 1) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(cutoutPoints[0].x, cutoutPoints[0].y);
+        for (let i = 1; i < cutoutPoints.length; i++) {
+          ctx.lineTo(cutoutPoints[i].x, cutoutPoints[i].y);
+        }
+        ctx.closePath();
+        ctx.strokeStyle = '#f97316';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(251, 146, 60, 0.2)';
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    function finishStickerCrafting() {
+      if (!rawUploadedImg) return;
+      if (cutoutMode === 'custom' && cutoutPoints.length < 5) {
+        showToast('請先用手指在照片上畫一圈框出想要的範圍！');
+        return;
+      }
+
+      const canvas = document.getElementById('cutoutCanvas');
+      const titleInput = document.getElementById('stickerTitleInput').value.trim() || '美好的一天';
+      const dateInput = document.getElementById('stickerDateInput').value || new Date().toISOString().split('T')[0];
+      const diaryInput = document.getElementById('stickerDiaryInput').value.trim() || '與你共同走過的溫暖日常。';
+      const hasBorder = document.getElementById('stickerBorderToggle').checked;
+
+      const outputCanvas = document.createElement('canvas');
+      const outCtx = outputCanvas.getContext('2d');
+
+      let stickerUrl = '';
+      if (cutoutMode === 'custom') {
+        let minX = 400, maxX = 0, minY = 400, maxY = 0;
+        cutoutPoints.forEach(p => {
+          if (p.x < minX) minX = p.x;
+          if (p.x > maxX) maxX = p.x;
+          if (p.y < minY) minY = p.y;
+          if (p.y > maxY) maxY = p.y;
+        });
+
+        const cropW = Math.max(maxX - minX, 30);
+        const cropH = Math.max(maxY - minY, 30);
+        outputCanvas.width = cropW;
+        outputCanvas.height = cropH;
+
+        outCtx.save();
+        outCtx.beginPath();
+        outCtx.moveTo(cutoutPoints[0].x - minX, cutoutPoints[0].y - minY);
+        for (let i = 1; i < cutoutPoints.length; i++) {
+          outCtx.lineTo(cutoutPoints[i].x - minX, cutoutPoints[i].y - minY);
+        }
+        outCtx.closePath();
+        outCtx.clip();
+
+        const minDim = Math.min(rawUploadedImg.width, rawUploadedImg.height);
+        const sx = (rawUploadedImg.width - minDim) / 2;
+        const sy = (rawUploadedImg.height - minDim) / 2;
+        outCtx.drawImage(rawUploadedImg, sx, sy, minDim, minDim, -minX, -minY, 400, 400);
+        outCtx.restore();
+
+        stickerUrl = outputCanvas.toDataURL('image/png');
+      } else {
+        outputCanvas.width = 240;
+        outputCanvas.height = 240;
+        const minDim = Math.min(rawUploadedImg.width, rawUploadedImg.height);
+        const sx = (rawUploadedImg.width - minDim) / 2;
+        const sy = (rawUploadedImg.height - minDim) / 2;
+        outCtx.drawImage(rawUploadedImg, sx, sy, minDim, minDim, 0, 0, 240, 240);
+        stickerUrl = outputCanvas.toDataURL('image/png');
+      }
+
+      appState.tickets -= 1;
+      const newSticker = {
+        id: 'stk_' + Date.now(),
+        name: titleInput,
+        url: stickerUrl,
+        originalPhoto: rawUploadedImg.src,
+        date: dateInput,
+        diary: diaryInput,
+        hasBorder: hasBorder,
+        creator: 'me'
+      };
+
+      appState.stickers.unshift(newSticker);
+      saveState();
+      renderStickers();
+      updateUI();
+      closeImageEditor();
+      showToast('🎉 自製貼圖已完成並收錄至庫存！');
+    }
+
+    function renderStickers() {
+      const grid = document.getElementById('stickerGrid');
+      if (!grid) return;
+      grid.innerHTML = '';
+      document.getElementById('stickerCount').innerText = appState.stickers.length;
+
+      appState.stickers.forEach(s => {
+        const card = document.createElement('div');
+        card.className = 'bg-white p-3 rounded-2xl border border-stone-200 shadow-sm flex flex-col justify-between';
+        card.innerHTML = `
+          <div class="w-full aspect-square bg-stone-50 rounded-xl flex items-center justify-center p-2 mb-2 overflow-hidden">
+            <img src="${s.url}" class="max-w-full max-h-full object-contain ${s.hasBorder ? 'sticker-with-border' : 'sticker-no-border'}" alt="${s.name}">
+          </div>
+          <div>
+            <div class="font-bold text-xs text-stone-800 truncate">${s.name}</div>
+            <div class="text-[10px] text-stone-400 mb-2">${s.date || '未設定日期'}</div>
+            <button onclick="placeStickerIntoRoom('${s.id}')" class="w-full py-1.5 bg-brand-50 hover:bg-brand-100 text-brand-700 font-bold rounded-lg text-xs transition border border-brand-200 flex items-center justify-center space-x-1 active:scale-95">
+              <span>放入小窩 (10❤️)</span>
+            </button>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function openStickerPickerForRoom() {
+      switchTab('stickers');
+      showToast('👇 請挑選想佈置到小窩的自製貼圖');
+    }
+
+    function placeStickerIntoRoom(stickerId) {
+      if (appState.hearts < PLACEMENT_HEART_COST) {
+        showToast(`⚠️ 相處愛心不足（需 ${PLACEMENT_HEART_COST} 顆）！兩機靠近累積相處時間即可獲得愛心`);
+        return;
+      }
+
+      const sticker = appState.stickers.find(s => s.id === stickerId);
+      if (!sticker) return;
+
+      const room = getActiveRoom();
+      appState.hearts -= PLACEMENT_HEART_COST;
+
+      // Place near center of viewport
+      const spawnX = Math.round((-roomViewport.x + 150) / (roomViewport.scale || 1));
+      const spawnY = Math.round((-roomViewport.y + 150) / (roomViewport.scale || 1));
+
+      const newDecor = {
+        id: 'decor_' + Date.now(),
+        name: sticker.name,
+        url: sticker.url,
+        originalPhoto: sticker.originalPhoto || sticker.url,
+        date: sticker.date,
+        diary: sticker.diary,
+        creator: 'me',
+        hasBorder: sticker.hasBorder,
+        size: 110,
+        x: Math.min(Math.max(spawnX, 100), ROOM_WIDTH - 250),
+        y: Math.min(Math.max(spawnY, 100), ROOM_HEIGHT - 250),
+        rotation: 0,
+        isRead: false
+      };
+
+      room.placedDecorations.push(newDecor);
+      saveState();
+      switchTab('room');
+      restoreRoomItems();
+      updateUI();
+      showToast(`✨ 已消耗 ${PLACEMENT_HEART_COST} 顆愛心將「${sticker.name}」擺入小窩！`);
+    }
+
+    function clearRoomCanvas() {
+      const room = getActiveRoom();
+      if (room.placedDecorations.length === 0) return;
+      if (confirm('確定要清空目前小窩中的所有佈置項目嗎？')) {
+        let recycled = 0;
+        room.placedDecorations.forEach(d => {
+          if (d.creator === 'me') recycled += RECYCLE_HEART_REWARD;
+        });
+        room.placedDecorations = [];
+        appState.hearts += recycled;
+        saveState();
+        restoreRoomItems();
+        updateUI();
+        showToast(`已清空小窩，並回收返還 +${recycled} 顆愛心！`);
+      }
+    }
+
+    function restoreRoomItems() {
+      const world = document.getElementById('roomWorld');
+      if (!world) return;
+
+      // Restore furniture first so it is rendered below stickers
+      restoreRoomFurniture();
+
+      // Remove existing stickers
+      const oldItems = world.querySelectorAll('.room-sticker');
+      oldItems.forEach(i => i.remove());
+
+      const currentRoom = getActiveRoom();
+      currentRoom.placedDecorations.forEach(decor => {
+        createDraggableRoomItem(decor);
+      });
+    }
+
+    // ==========================================
+    // 8. ROOM VIEWPORT: ZOOM & PAN SYSTEM (自由拖曳與邊界保護)
+    // ==========================================
+    function updateMinScale() {
+      const container = document.getElementById('roomContainer');
+      if (!container) return;
+      const rect = container.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+
+      const scaleX = rect.width / ROOM_WIDTH;
+      const scaleY = rect.height / ROOM_HEIGHT;
+      roomViewport.minScale = Math.min(scaleX, scaleY);
+    }
+
+    function clampViewportPosition() {
+      const container = document.getElementById('roomContainer');
+      if (!container) return;
+      const rect = container.getBoundingClientRect();
+
+      const scaledW = ROOM_WIDTH * roomViewport.scale;
+      const scaledH = ROOM_HEIGHT * roomViewport.scale;
+
+      if (scaledW <= rect.width) {
+        roomViewport.x = (rect.width - scaledW) / 2;
+      } else {
+        const minX = rect.width - scaledW;
+        const maxX = 0;
+        roomViewport.x = Math.min(Math.max(roomViewport.x, minX), maxX);
+      }
+
+      if (scaledH <= rect.height) {
+        roomViewport.y = (rect.height - scaledH) / 2;
+      } else {
+        const minY = rect.height - scaledH;
+        const maxY = 0;
+        roomViewport.y = Math.min(Math.max(roomViewport.y, minY), maxY);
+      }
+    }
+
+    function updateRoomViewportTransform() {
+      const world = document.getElementById('roomWorld');
+      const zoomText = document.getElementById('roomZoomDisplay');
+      if (!world) return;
+      world.style.transform = `translate3d(${roomViewport.x}px, ${roomViewport.y}px, 0px) scale(${roomViewport.scale})`;
+      if (zoomText) {
+        zoomText.innerText = `${Math.round(roomViewport.scale * 100)}%`;
+      }
+    }
+
+    function fitRoomToScreen(quiet = false) {
+      const container = document.getElementById('roomContainer');
+      if (!container) return;
+      updateMinScale();
+      roomViewport.scale = roomViewport.minScale;
+      clampViewportPosition();
+      updateRoomViewportTransform();
+      if (!quiet) showToast('🔍 已置中全景展示');
+    }
+
+    function adjustRoomZoom(delta) {
+      const container = document.getElementById('roomContainer');
+      if (!container) return;
+      const rect = container.getBoundingClientRect();
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+
+      const oldScale = roomViewport.scale;
+      const newScale = Math.min(Math.max(oldScale + delta, roomViewport.minScale), roomViewport.maxScale);
+      if (Math.abs(newScale - oldScale) < 0.001) return;
+
+      const worldX = (centerX - roomViewport.x) / oldScale;
+      const worldY = (centerY - roomViewport.y) / oldScale;
+
+      roomViewport.scale = newScale;
+      roomViewport.x = centerX - worldX * newScale;
+      roomViewport.y = centerY - worldY * newScale;
+
+      clampViewportPosition();
+      updateRoomViewportTransform();
+    }
+
+    function initRoomZoomAndPan() {
+      const container = document.getElementById('roomContainer');
+      if (!container) return;
+
+      let isPanning = false;
+      let panStartX = 0, panStartY = 0;
+      let initVx = 0, initVy = 0;
+      let initialPinchDist = 0;
+      let initialPinchScale = 1;
+      let pinchMidpoint = { x: 0, y: 0 };
+      let isPinching = false;
+
+      const getTouchDist = (t1, t2) => Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+      const getTouchMid = (t1, t2) => ({
+        x: (t1.clientX + t2.clientX) / 2,
+        y: (t1.clientY + t2.clientY) / 2
+      });
+
+      // Touch interactions
+      container.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 2) {
+          isPinching = true;
+          isPanning = false;
+          initialPinchDist = getTouchDist(e.touches[0], e.touches[1]);
+          initialPinchScale = roomViewport.scale;
+          pinchMidpoint = getTouchMid(e.touches[0], e.touches[1]);
+          return;
+        }
+
+        if (e.touches.length === 1) {
+          if (e.target.closest('.room-sticker') || e.target.closest('.room-furniture') || e.target.closest('#roomWallCalendar') || e.target.closest('button')) {
+            return;
+          }
+          isPanning = true;
+          panStartX = e.touches[0].clientX;
+          panStartY = e.touches[0].clientY;
+          initVx = roomViewport.x;
+          initVy = roomViewport.y;
+        }
+      }, { passive: false });
+
+      container.addEventListener('touchmove', (e) => {
+        if (isPinching && e.touches.length === 2) {
+          e.preventDefault();
+          const currentDist = getTouchDist(e.touches[0], e.touches[1]);
+          const ratio = currentDist / (initialPinchDist || 1);
+          const newScale = Math.min(Math.max(initialPinchScale * ratio, roomViewport.minScale), roomViewport.maxScale);
+
+          const rect = container.getBoundingClientRect();
+          const midX = pinchMidpoint.x - rect.left;
+          const midY = pinchMidpoint.y - rect.top;
+
+          const worldX = (midX - roomViewport.x) / roomViewport.scale;
+          const worldY = (midY - roomViewport.y) / roomViewport.scale;
+
+          roomViewport.scale = newScale;
+          roomViewport.x = midX - worldX * newScale;
+          roomViewport.y = midY - worldY * newScale;
+
+          clampViewportPosition();
+          updateRoomViewportTransform();
+          return;
+        }
+
+        if (isPanning && e.touches.length === 1) {
+          e.preventDefault();
+          const dx = e.touches[0].clientX - panStartX;
+          const dy = e.touches[0].clientY - panStartY;
+          roomViewport.x = initVx + dx;
+          roomViewport.y = initVy + dy;
+          clampViewportPosition();
+          updateRoomViewportTransform();
+        }
+      }, { passive: false });
+
+      const endTouch = () => {
+        isPinching = false;
+        isPanning = false;
+      };
+      container.addEventListener('touchend', endTouch);
+      container.addEventListener('touchcancel', endTouch);
+
+      // Mouse drag pan
+      container.addEventListener('mousedown', (e) => {
+        if (e.target.closest('.room-sticker') || e.target.closest('.room-furniture') || e.target.closest('#roomWallCalendar') || e.target.closest('button')) {
+          return;
+        }
+        isPanning = true;
+        panStartX = e.clientX;
+        panStartY = e.clientY;
+        initVx = roomViewport.x;
+        initVy = roomViewport.y;
+
+        const onMouseMove = (ev) => {
+          if (!isPanning) return;
+          ev.preventDefault();
+          const dx = ev.clientX - panStartX;
+          const dy = ev.clientY - panStartY;
+          roomViewport.x = initVx + dx;
+          roomViewport.y = initVy + dy;
+          clampViewportPosition();
+          updateRoomViewportTransform();
+        };
+
+        const onMouseUp = () => {
+          isPanning = false;
+          window.removeEventListener('mousemove', onMouseMove);
+          window.removeEventListener('mouseup', onMouseUp);
+        };
+
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('mouseup', onMouseUp);
+      });
+
+      // Mouse wheel zoom
+      container.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const delta = e.deltaY < 0 ? 0.08 : -0.08;
+        const rect = container.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        const oldScale = roomViewport.scale;
+        const newScale = Math.min(Math.max(oldScale + delta, roomViewport.minScale), roomViewport.maxScale);
+        if (Math.abs(newScale - oldScale) < 0.001) return;
+
+        const worldX = (mouseX - roomViewport.x) / oldScale;
+        const worldY = (mouseY - roomViewport.y) / oldScale;
+
+        roomViewport.scale = newScale;
+        roomViewport.x = mouseX - worldX * newScale;
+        roomViewport.y = mouseY - worldY * newScale;
+
+        clampViewportPosition();
+        updateRoomViewportTransform();
+      }, { passive: false });
+    }
+
+    // ==========================================
+    // 9. ROOM WALLPAPER & FLOORING BACKGROUNDS
+    // ==========================================
+    const PRESET_THEMES = {
+      warmWood: {
+        wallBg: '#f8f5f0',
+        wallGrid: true,
+        wallImg: null,
+        floorBg: '#eedecf',
+        floorBorder: '#d1bfaf',
+        floorImg: null
+      },
+      tatami: {
+        wallBg: '#f4f1ea',
+        wallGrid: false,
+        wallImg: null,
+        floorBg: '#c5d8ba',
+        floorBorder: '#9eb890',
+        floorImg: null
+      },
+      pastelGarden: {
+        wallBg: '#fdf2f4',
+        wallGrid: false,
+        wallImg: null,
+        floorBg: '#e2ece9',
+        floorBorder: '#c3d5d0',
+        floorImg: null
+      },
+      nightCozy: {
+        wallBg: '#1e2238',
+        wallGrid: false,
+        wallImg: null,
+        floorBg: '#443731',
+        floorBorder: '#2b231f',
+        floorImg: null
+      }
+    };
+
+    function openBackgroundThemeModal() {
+      document.getElementById('bgThemeModal').classList.remove('hidden');
+    }
+
+    function closeBackgroundThemeModal() {
+      document.getElementById('bgThemeModal').classList.add('hidden');
+    }
+
+    function applyPresetTheme(themeKey) {
+      const theme = PRESET_THEMES[themeKey];
+      if (!theme) return;
+      const room = getActiveRoom();
+      room.decorTheme = JSON.parse(JSON.stringify(theme));
+      saveState();
+      applyRoomBackgrounds();
+      showToast('🎨 已切換裝潢主題！');
+    }
+
+    function applyRoomBackgrounds() {
+      const room = getActiveRoom();
+      const theme = room.decorTheme || PRESET_THEMES.warmWood;
+      const wallLayer = document.getElementById('roomWallpaperLayer');
+      const floorLayer = document.getElementById('roomFlooringLayer');
+      if (!wallLayer || !floorLayer) return;
+
+      if (theme.wallImg) {
+        wallLayer.style.backgroundImage = `url(${theme.wallImg})`;
+        wallLayer.style.backgroundSize = 'cover';
+        wallLayer.style.backgroundPosition = 'center';
+        wallLayer.style.backgroundColor = 'transparent';
+        wallLayer.classList.remove('room-grid');
+      } else {
+        wallLayer.style.backgroundImage = '';
+        wallLayer.style.backgroundColor = theme.wallBg || '#f8f5f0';
+        if (theme.wallGrid !== false) {
+          wallLayer.classList.add('room-grid');
+        } else {
+          wallLayer.classList.remove('room-grid');
+        }
+      }
+
+      if (theme.floorImg) {
+        floorLayer.style.backgroundImage = `url(${theme.floorImg})`;
+        floorLayer.style.backgroundSize = 'cover';
+        floorLayer.style.backgroundPosition = 'center';
+        floorLayer.style.backgroundColor = 'transparent';
+      } else {
+        floorLayer.style.backgroundImage = '';
+        floorLayer.style.backgroundColor = theme.floorBg || '#eedecf';
+        floorLayer.style.borderColor = theme.floorBorder || '#d1bfaf';
+      }
+    }
+
+    function handleCustomBgUpload(event, type) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      if (appState.hearts < BG_HEART_COST) {
+        showToast(`⚠️ 相處愛心不足（需 ${BG_HEART_COST} 顆）！兩機靠近累積即可獲得`);
+        event.target.value = '';
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target.result;
+        const room = getActiveRoom();
+        if (!room.decorTheme) room.decorTheme = JSON.parse(JSON.stringify(PRESET_THEMES.warmWood));
+
+        appState.hearts -= BG_HEART_COST;
+        if (type === 'wallpaper') {
+          room.decorTheme.wallImg = dataUrl;
+          showToast(`✨ 已消耗 ${BG_HEART_COST} 顆愛心套用滿板自訂壁紙！`);
+        } else {
+          room.decorTheme.floorImg = dataUrl;
+          showToast(`✨ 已消耗 ${BG_HEART_COST} 顆愛心套用滿板自訂地板！`);
+        }
+
+        saveState();
+        applyRoomBackgrounds();
+        updateUI();
+      };
+      reader.readAsDataURL(file);
+      event.target.value = '';
+    }
+
+    function resetCustomWallpaper() {
+      const room = getActiveRoom();
+      if (room.decorTheme) {
+        room.decorTheme.wallImg = null;
+      }
+      saveState();
+      applyRoomBackgrounds();
+      showToast('已重設壁紙為預設樣式');
+    }
+
+    function resetCustomFlooring() {
+      const room = getActiveRoom();
+      if (room.decorTheme) {
+        room.decorTheme.floorImg = null;
+      }
+      saveState();
+      applyRoomBackgrounds();
+      showToast('已重設地板為預設樣式');
+    }
+
+    // ==========================================
+    // 10. FURNITURE & DECORATIONS CREATION
+    // ==========================================
+    const FURNITURE_COLOR_PALETTES = [
+      { id: 'warmOak', name: '溫暖淺木', primary: '#d4a373', surface: '#faedcd', border: '#bc6c25' },
+      { id: 'darkWalnut', name: '沉穩胡桃', primary: '#6f4e37', surface: '#8b5a2b', border: '#4a3525' },
+      { id: 'ivoryWhite', name: '象牙純白', primary: '#e5e5e5', surface: '#ffffff', border: '#a3a3a3' },
+      { id: 'charcoalSlate', name: '曜石黑灰', primary: '#3f3f46', surface: '#52525b', border: '#18181b' },
+      { id: 'matchaSage', name: '抹茶青綠', primary: '#a3b18a', surface: '#dad7cd', border: '#588157' }
+    ];
+    let selectedFurnitureColorId = 'warmOak';
+
+    const FURNITURE_CATALOG = [
+      {
+        id: 'dining_table',
+        name: '原木大長桌',
+        category: '桌子',
+        desc: '超寬敞平整桌面，方便擺放各式美食貼圖',
+        width: 220,
+        height: 110,
+        render: (c) => `
+          <svg viewBox="0 0 220 110" width="100%" height="100%">
+            <rect x="22" y="32" width="12" height="74" fill="${c.border}" rx="3"/>
+            <rect x="186" y="32" width="12" height="74" fill="${c.border}" rx="3"/>
+            <line x1="34" y1="70" x2="186" y2="70" stroke="${c.border}" stroke-width="4"/>
+            <rect x="6" y="24" width="208" height="14" fill="${c.border}" rx="4"/>
+            <polygon points="6,24 24,6 196,6 214,24" fill="${c.surface}"/>
+            <polygon points="6,24 24,6 196,6 214,24" stroke="${c.border}" stroke-width="2" fill="none"/>
+          </svg>
+        `
+      },
+      {
+        id: 'coffee_table',
+        name: '簡約圓角茶几',
+        category: '桌子',
+        desc: '客廳低矮茶几，可擺咖啡、蛋糕貼圖',
+        width: 170,
+        height: 75,
+        render: (c) => `
+          <svg viewBox="0 0 170 75" width="100%" height="100%">
+            <line x1="26" y1="26" x2="16" y2="70" stroke="${c.border}" stroke-width="6" stroke-linecap="round"/>
+            <line x1="144" y1="26" x2="154" y2="70" stroke="${c.border}" stroke-width="6" stroke-linecap="round"/>
+            <rect x="8" y="16" width="154" height="14" rx="7" fill="${c.primary}"/>
+            <ellipse cx="85" cy="18" rx="75" ry="12" fill="${c.surface}" stroke="${c.border}" stroke-width="2"/>
+          </svg>
+        `
+      },
+      {
+        id: 'bookshelf_wide',
+        name: '三層寬幅書櫃',
+        category: '書櫃',
+        desc: '3 個平坦展示格層，方便擺放收藏與小物',
+        width: 190,
+        height: 200,
+        render: (c) => `
+          <svg viewBox="0 0 190 200" width="100%" height="100%">
+            <rect x="6" y="8" width="178" height="186" rx="6" fill="${c.surface}" stroke="${c.border}" stroke-width="5"/>
+            <rect x="6" y="65" width="178" height="9" fill="${c.primary}" stroke="${c.border}" stroke-width="2"/>
+            <rect x="6" y="125" width="178" height="9" fill="${c.primary}" stroke="${c.border}" stroke-width="2"/>
+            <rect x="6" y="185" width="178" height="9" fill="${c.border}"/>
+          </svg>
+        `
+      },
+      {
+        id: 'credenza_cabinet',
+        name: '雙門北歐邊櫃',
+        category: '櫃子',
+        desc: '平整頂部檯面，擺放盆栽與相框極佳',
+        width: 190,
+        height: 120,
+        render: (c) => `
+          <svg viewBox="0 0 190 120" width="100%" height="100%">
+            <rect x="22" y="96" width="8" height="20" fill="${c.border}" rx="2"/>
+            <rect x="160" y="96" width="8" height="20" fill="${c.border}" rx="2"/>
+            <rect x="10" y="18" width="170" height="80" rx="5" fill="${c.primary}" stroke="${c.border}" stroke-width="3"/>
+            <rect x="15" y="24" width="77" height="68" rx="3" fill="${c.surface}" stroke="${c.border}" stroke-width="2"/>
+            <rect x="98" y="24" width="77" height="68" rx="3" fill="${c.surface}" stroke="${c.border}" stroke-width="2"/>
+            <circle cx="85" cy="58" r="3.5" fill="${c.border}"/>
+            <circle cx="105" cy="58" r="3.5" fill="${c.border}"/>
+            <rect x="6" y="12" width="178" height="8" rx="4" fill="${c.border}"/>
+          </svg>
+        `
+      },
+      {
+        id: 'sofa_double',
+        name: '雙人舒適布沙發',
+        category: '沙發',
+        desc: '大面積坐墊，可將可愛貼圖並排擺在沙發上',
+        width: 230,
+        height: 125,
+        render: (c) => `
+          <svg viewBox="0 0 230 125" width="100%" height="100%">
+            <rect x="20" y="105" width="10" height="15" fill="${c.border}" rx="2"/>
+            <rect x="200" y="105" width="10" height="15" fill="${c.border}" rx="2"/>
+            <rect x="15" y="15" width="200" height="65" rx="14" fill="${c.border}"/>
+            <rect x="22" y="20" width="90" height="52" rx="10" fill="${c.surface}"/>
+            <rect x="118" y="20" width="90" height="52" rx="10" fill="${c.surface}"/>
+            <rect x="8" y="50" width="24" height="55" rx="10" fill="${c.primary}" stroke="${c.border}" stroke-width="2"/>
+            <rect x="198" y="50" width="24" height="55" rx="10" fill="${c.primary}" stroke="${c.border}" stroke-width="2"/>
+            <rect x="26" y="66" width="87" height="40" rx="8" fill="${c.surface}" stroke="${c.border}" stroke-width="2"/>
+            <rect x="117" y="66" width="87" height="40" rx="8" fill="${c.surface}" stroke="${c.border}" stroke-width="2"/>
+          </svg>
+        `
+      },
+      {
+        id: 'study_desk',
+        name: '工作書桌 & 抽屜',
+        category: '桌子',
+        desc: '寬敞書桌面與置物抽屜，適合生活道具',
+        width: 200,
+        height: 130,
+        render: (c) => `
+          <svg viewBox="0 0 200 130" width="100%" height="100%">
+            <rect x="14" y="30" width="10" height="95" fill="${c.border}" rx="2"/>
+            <rect x="135" y="30" width="52" height="92" rx="4" fill="${c.primary}" stroke="${c.border}" stroke-width="3"/>
+            <rect x="140" y="36" width="42" height="24" rx="2" fill="${c.surface}" stroke="${c.border}" stroke-width="1.5"/>
+            <rect x="140" y="64" width="42" height="24" rx="2" fill="${c.surface}" stroke="${c.border}" stroke-width="1.5"/>
+            <rect x="140" y="92" width="42" height="24" rx="2" fill="${c.surface}" stroke="${c.border}" stroke-width="1.5"/>
+            <line x1="154" y1="48" x2="168" y2="48" stroke="${c.border}" stroke-width="3" stroke-linecap="round"/>
+            <line x1="154" y1="76" x2="168" y2="76" stroke="${c.border}" stroke-width="3" stroke-linecap="round"/>
+            <line x1="154" y1="104" x2="168" y2="104" stroke="${c.border}" stroke-width="3" stroke-linecap="round"/>
+            <rect x="6" y="16" width="188" height="16" rx="4" fill="${c.border}"/>
+            <polygon points="6,16 22,4 178,4 194,16" fill="${c.surface}" stroke="${c.border}" stroke-width="2"/>
+          </svg>
+        `
+      },
+      {
+        id: 'chair_armchair',
+        name: '簡約休閒單椅',
+        category: '椅子',
+        desc: '單人木椅，平整椅面可擺寵物或抱枕',
+        width: 95,
+        height: 120,
+        render: (c) => `
+          <svg viewBox="0 0 95 120" width="100%" height="100%">
+            <line x1="20" y1="65" x2="14" y2="114" stroke="${c.border}" stroke-width="5" stroke-linecap="round"/>
+            <line x1="75" y1="65" x2="81" y2="114" stroke="${c.border}" stroke-width="5" stroke-linecap="round"/>
+            <rect x="22" y="12" width="51" height="50" rx="8" fill="${c.primary}" stroke="${c.border}" stroke-width="2"/>
+            <rect x="30" y="18" width="35" height="40" rx="4" fill="${c.surface}"/>
+            <rect x="12" y="60" width="71" height="15" rx="5" fill="${c.surface}" stroke="${c.border}" stroke-width="2.5"/>
+          </svg>
+        `
+      },
+      {
+        id: 'rug_aesthetic',
+        name: '幾何編織大地毯',
+        category: '地毯',
+        desc: '鋪在地板上的平整地毯，營造溫馨基底',
+        width: 250,
+        height: 100,
+        render: (c) => `
+          <svg viewBox="0 0 250 100" width="100%" height="100%">
+            <ellipse cx="125" cy="50" rx="120" ry="44" fill="${c.surface}" stroke="${c.border}" stroke-width="4"/>
+            <ellipse cx="125" cy="50" rx="98" ry="34" fill="none" stroke="${c.primary}" stroke-width="2" stroke-dasharray="6,4"/>
+            <line x1="12" y1="50" x2="2" y2="50" stroke="${c.border}" stroke-width="3"/>
+            <line x1="238" y1="50" x2="248" y2="50" stroke="${c.border}" stroke-width="3"/>
+          </svg>
+        `
+      }
+    ];
+
+    function updateWallCalendar() {
+      const now = new Date();
+      const months = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+      const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+
+      const mEl = document.getElementById('calendarMonthText');
+      const dEl = document.getElementById('calendarDateText');
+      const dayEl = document.getElementById('calendarDayText');
+
+      if (mEl) mEl.innerText = months[now.getMonth()];
+      if (dEl) dEl.innerText = String(now.getDate()).padStart(2, '0');
+      if (dayEl) dayEl.innerText = days[now.getDay()];
+    }
+
+    let activeTimelineFilter = 'all';
+
+    function openDiariesTimelineModal() {
+      renderDiariesTimeline();
+      document.getElementById('diariesTimelineModal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeDiariesTimelineModal() {
+      document.getElementById('diariesTimelineModal').classList.add('hidden');
+    }
+
+    function filterDiariesTimeline(filter) {
+      activeTimelineFilter = filter;
+      const allBtn = document.getElementById('timelineFilterAll');
+      const meBtn = document.getElementById('timelineFilterMe');
+      const partnerBtn = document.getElementById('timelineFilterPartner');
+
+      [allBtn, meBtn, partnerBtn].forEach(b => {
+        if (b) b.className = 'flex-1 py-1 text-center rounded-lg text-stone-500 font-medium transition';
+      });
+
+      if (filter === 'all' && allBtn) {
+        allBtn.className = 'flex-1 py-1 text-center rounded-lg bg-white text-stone-800 font-bold shadow-xs';
+      } else if (filter === 'me' && meBtn) {
+        meBtn.className = 'flex-1 py-1 text-center rounded-lg bg-white text-stone-800 font-bold shadow-xs';
+      } else if (partnerBtn) {
+        partnerBtn.className = 'flex-1 py-1 text-center rounded-lg bg-white text-stone-800 font-bold shadow-xs';
+      }
+
+      renderDiariesTimeline();
+    }
+
+    function renderDiariesTimeline() {
+      const listEl = document.getElementById('diariesTimelineList');
+      if (!listEl) return;
+      const room = getActiveRoom();
+
+      let memories = [...room.placedDecorations];
+      memories.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+
+      if (activeTimelineFilter === 'me') {
+        memories = memories.filter(m => m.creator === 'me');
+      } else if (activeTimelineFilter === 'partner') {
+        memories = memories.filter(m => m.creator === 'partner');
+      }
+
+      listEl.innerHTML = '';
+      if (memories.length === 0) {
+        listEl.innerHTML = `
+          <div class="text-center py-8 text-stone-400 space-y-2">
+            <i data-lucide="book-open" class="w-8 h-8 mx-auto text-stone-300"></i>
+            <div class="text-xs">尚無相關回憶日記</div>
+            <div class="text-[10px]">散步累計步數自製貼圖，記錄你們的生活故事！</div>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      memories.forEach(m => {
+        const isMe = (m.creator === 'me');
+        const card = document.createElement('div');
+        card.className = 'p-3 bg-stone-50 hover:bg-stone-100/80 rounded-2xl border border-stone-200 transition cursor-pointer flex space-x-3 items-start';
+        card.onclick = () => {
+          closeDiariesTimelineModal();
+          openMemoryInspection(m);
+        };
+
+        const commentsCount = (m.comments && m.comments.length) || 0;
+
+        card.innerHTML = `
+          <div class="w-14 h-14 rounded-xl bg-white border border-stone-200 overflow-hidden flex-shrink-0 flex items-center justify-center p-1 shadow-xs">
+            <img src="${m.url}" class="max-w-full max-h-full object-contain" alt="${m.name}">
+          </div>
+          <div class="flex-1 min-w-0 space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-xs text-stone-800 truncate">${m.name || '美好回憶'}</span>
+              <span class="text-[9px] font-bold px-1.5 py-0.2 rounded-full ${
+                isMe ? 'bg-orange-100 text-orange-700' : 'bg-stone-200 text-stone-700'
+              }">${isMe ? '我' : (room.partnerName || '對方')}</span>
+            </div>
+            <div class="flex items-center text-[10px] text-stone-400 space-x-1.5">
+              <span>📅 ${m.date || '未設定'}</span>
+              ${commentsCount > 0 ? `<span>• 💬 ${commentsCount} 則留言</span>` : ''}
+            </div>
+            <p class="text-[11px] text-stone-600 font-serif line-clamp-2 leading-relaxed">
+              ${m.diary || '這段回憶沒有文字日記，但依舊閃閃發亮。'}
+            </p>
+          </div>
+        `;
+        listEl.appendChild(card);
+      });
+      lucide.createIcons();
+    }
+
+    function openFurnitureModal() {
+      renderFurnitureColorPalette();
+      renderFurnitureList();
+      document.getElementById('furnitureCatalogModal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeFurnitureModal() {
+      document.getElementById('furnitureCatalogModal').classList.add('hidden');
+    }
+
+    function renderFurnitureColorPalette() {
+      const container = document.getElementById('furnitureColorPaletteContainer');
+      if (!container) return;
+      container.innerHTML = '';
+
+      FURNITURE_COLOR_PALETTES.forEach(pal => {
+        const isSelected = (pal.id === selectedFurnitureColorId);
+        const btn = document.createElement('button');
+        btn.className = `flex flex-col items-center p-1.5 rounded-xl border transition ${
+          isSelected ? 'border-brand-500 bg-orange-50/50 shadow-xs ring-1 ring-brand-500' : 'border-stone-200 bg-white hover:bg-stone-50'
+        }`;
+        btn.onclick = () => {
+          selectedFurnitureColorId = pal.id;
+          renderFurnitureColorPalette();
+          renderFurnitureList();
+        };
+
+        btn.innerHTML = `
+          <div class="w-5 h-5 rounded-full border border-stone-300 shadow-inner mb-1" style="background-color: ${pal.primary}"></div>
+          <span class="text-[9px] font-medium text-stone-700 truncate">${pal.name}</span>
+        `;
+        container.appendChild(btn);
+      });
+    }
+
+    function renderFurnitureList() {
+      const container = document.getElementById('furnitureListContainer');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const currentPalette = FURNITURE_COLOR_PALETTES.find(p => p.id === selectedFurnitureColorId) || FURNITURE_COLOR_PALETTES[0];
+
+      FURNITURE_CATALOG.forEach(f => {
+        const card = document.createElement('div');
+        card.className = 'bg-stone-50 p-2.5 rounded-2xl border border-stone-200 flex flex-col justify-between hover:bg-stone-100/60 transition';
+
+        card.innerHTML = `
+          <div class="w-full h-24 bg-white rounded-xl border border-stone-200 flex items-center justify-center p-2 mb-2 shadow-xs overflow-hidden">
+            ${f.render(currentPalette)}
+          </div>
+          <div class="space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-xs text-stone-800">${f.name}</span>
+              <span class="text-[9px] bg-stone-200 text-stone-600 px-1 rounded font-medium">${f.category}</span>
+            </div>
+            <p class="text-[10px] text-stone-400 line-clamp-1">${f.desc}</p>
+            <button onclick="placeSelectedFurniture('${f.id}')" class="w-full mt-1.5 py-1.5 bg-stone-900 hover:bg-stone-800 text-white font-bold rounded-xl text-xs active:scale-95 transition flex items-center justify-center space-x-1">
+              <span>擺入小窩 (5❤️)</span>
+            </button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function placeSelectedFurniture(catalogId) {
+      if (appState.hearts < FURNITURE_HEART_COST) {
+        showToast(`⚠️ 相處愛心不足（需 ${FURNITURE_HEART_COST} 顆）！兩機靠近累積即可獲得愛心`);
+        return;
+      }
+
+      const itemDef = FURNITURE_CATALOG.find(f => f.id === catalogId);
+      if (!itemDef) return;
+
+      const room = getActiveRoom();
+      if (!room.placedFurniture) room.placedFurniture = [];
+
+      appState.hearts -= FURNITURE_HEART_COST;
+
+      const spawnX = Math.round((-roomViewport.x + 150) / (roomViewport.scale || 1));
+      const spawnY = Math.round((-roomViewport.y + 250) / (roomViewport.scale || 1));
+
+      const newFurn = {
+        id: 'furn_' + Date.now(),
+        catalogId: itemDef.id,
+        name: itemDef.name,
+        colorId: selectedFurnitureColorId,
+        width: itemDef.width,
+        height: itemDef.height,
+        x: Math.min(Math.max(spawnX, 100), ROOM_WIDTH - itemDef.width - 100),
+        y: Math.min(Math.max(spawnY, 500), ROOM_HEIGHT - itemDef.height - 50),
+        rotation: 0
+      };
+
+      room.placedFurniture.push(newFurn);
+      saveState();
+      restoreRoomFurniture();
+      updateUI();
+      closeFurnitureModal();
+      showToast(`🛋️ 已擺入「${itemDef.name}」！表面可自由擺上貼圖道具`);
+    }
+
+    function restoreRoomFurniture() {
+      const world = document.getElementById('roomWorld');
+      if (!world) return;
+
+      world.querySelectorAll('.room-furniture').forEach(el => el.remove());
+
+      const room = getActiveRoom();
+      if (!room.placedFurniture) room.placedFurniture = [];
+
+      room.placedFurniture.forEach(furn => {
+        createDraggableFurnitureItem(furn);
+      });
+    }
+
+    function createDraggableFurnitureItem(furn) {
+      const container = document.getElementById('roomWorld');
+      const itemDef = FURNITURE_CATALOG.find(f => f.id === furn.catalogId);
+      if (!itemDef || !container) return;
+
+      const pal = FURNITURE_COLOR_PALETTES.find(p => p.id === furn.colorId) || FURNITURE_COLOR_PALETTES[0];
+
+      const el = document.createElement('div');
+      el.className = 'room-furniture absolute select-none cursor-grab active:cursor-grabbing flex items-center justify-center';
+      el.style.left = `${furn.x}px`;
+      el.style.top = `${furn.y}px`;
+      el.style.width = `${furn.width}px`;
+      el.style.height = `${furn.height}px`;
+      el.style.zIndex = '6';
+      el.style.transform = `rotate(${furn.rotation || 0}deg)`;
+
+      // SVG 渲染容器，保持等比自適應縮放
+      const svgWrapper = document.createElement('div');
+      svgWrapper.className = 'furniture-svg-wrapper w-full h-full pointer-events-none flex items-center justify-center';
+      svgWrapper.innerHTML = itemDef.render(pal);
+      el.appendChild(svgWrapper);
+
+      let isDragging = false;
+      let startX = 0, startY = 0;
+      let initialLeft = 0, initialTop = 0;
+      let hasMoved = false;
+      let pressTimer = null;
+
+      const onStart = (e) => {
+        if (e.target.closest('.handle-btn')) return;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        startX = clientX;
+        startY = clientY;
+        initialLeft = parseFloat(el.style.left) || furn.x;
+        initialTop = parseFloat(el.style.top) || furn.y;
+        hasMoved = false;
+
+        // 長按 450ms 進入家具編輯模式
+        clearTimeout(pressTimer);
+        pressTimer = setTimeout(() => {
+          if (!hasMoved) {
+            enableFurnitureEditMode();
+          }
+        }, 450);
+
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onEnd);
+        window.addEventListener('touchmove', onMove, { passive: false });
+        window.addEventListener('touchend', onEnd);
+      };
+
+      const onMove = (e) => {
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const dist = Math.hypot(clientX - startX, clientY - startY);
+        if (dist > 8) {
+          hasMoved = true;
+          clearTimeout(pressTimer);
+        }
+
+        if (dist > 8 && !isDragging) {
+          isDragging = true;
+          el.style.zIndex = '25';
+        }
+
+        if (isDragging) {
+          e.preventDefault();
+          const scale = roomViewport.scale || 1;
+          const dx = (clientX - startX) / scale;
+          const dy = (clientY - startY) / scale;
+
+          const currentW = furn.width || parseFloat(el.style.width) || itemDef.width;
+          const currentH = furn.height || parseFloat(el.style.height) || itemDef.height;
+
+          const newX = Math.min(Math.max(initialLeft + dx, 10), ROOM_WIDTH - currentW - 10);
+          const newY = Math.min(Math.max(initialTop + dy, 50), ROOM_HEIGHT - currentH - 10);
+
+          el.style.left = `${newX}px`;
+          el.style.top = `${newY}px`;
+        }
+      };
+
+      const onEnd = () => {
+        clearTimeout(pressTimer);
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup', onEnd);
+        window.removeEventListener('touchmove', onMove);
+        window.removeEventListener('touchend', onEnd);
+
+        if (isDragging) {
+          isDragging = false;
+          el.style.zIndex = el.classList.contains('sticker-editing-box') ? '25' : '6';
+          furn.x = parseFloat(el.style.left) || furn.x;
+          furn.y = parseFloat(el.style.top) || furn.y;
+          saveState();
+        } else if (!hasMoved) {
+          if (!el.classList.contains('sticker-editing-box')) {
+            showToast(`🛋️ 「${furn.name}」：長按可進入編輯模式（旋轉、換色、縮放）`);
+          }
+        }
+      };
+
+      const enableFurnitureEditMode = () => {
+        // 清除其他物件的編輯狀態
+        document.querySelectorAll('.sticker-editing-box').forEach(b => {
+          b.classList.remove('sticker-editing-box');
+          const h = b.querySelector('.sticker-edit-handles');
+          if (h) h.remove();
+        });
+
+        el.classList.add('sticker-editing-box');
+        el.style.zIndex = '25';
+
+        const handleContainer = document.createElement('div');
+        handleContainer.className = 'sticker-edit-handles absolute -inset-3 pointer-events-none z-20';
+
+        // 1. 旋轉把手 (左上角)
+        const rotBtn = document.createElement('button');
+        rotBtn.className = 'handle-btn absolute -top-2.5 -left-2.5 w-7 h-7 bg-white text-stone-800 rounded-full border border-stone-300 flex items-center justify-center text-xs font-bold pointer-events-auto active:scale-90';
+        rotBtn.innerHTML = '↻';
+        rotBtn.title = '拖曳旋轉家具角度';
+        initFurnitureRotateHandle(rotBtn, furn, el);
+
+        // 2. 切換色系按鈕 (頂部中央)
+        const colorBtn = document.createElement('button');
+        colorBtn.className = 'handle-btn absolute -top-3.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 bg-stone-900 text-white rounded-full text-[10px] font-bold pointer-events-auto active:scale-95 shadow-xs flex items-center space-x-1 whitespace-nowrap';
+        const curPal = FURNITURE_COLOR_PALETTES.find(p => p.id === furn.colorId) || FURNITURE_COLOR_PALETTES[0];
+        colorBtn.innerHTML = `<span>🎨</span> <span>${curPal.name}</span>`;
+        colorBtn.title = '點擊切換家具色系';
+        colorBtn.onclick = (ev) => {
+          ev.stopPropagation();
+          const currentIndex = FURNITURE_COLOR_PALETTES.findIndex(p => p.id === furn.colorId);
+          const nextIndex = (currentIndex + 1) % FURNITURE_COLOR_PALETTES.length;
+          const newPal = FURNITURE_COLOR_PALETTES[nextIndex];
+          furn.colorId = newPal.id;
+          svgWrapper.innerHTML = itemDef.render(newPal);
+          colorBtn.innerHTML = `<span>🎨</span> <span>${newPal.name}</span>`;
+          saveState();
+          showToast(`已切換為：「${newPal.name}」色系`);
+        };
+
+        // 3. 刪除/收回家具按鈕 (右上角)
+        const delBtn = document.createElement('button');
+        delBtn.className = 'handle-btn absolute -top-2.5 -right-2.5 w-7 h-7 bg-rose-500 text-white rounded-full flex items-center justify-center text-xs font-bold pointer-events-auto active:scale-90 shadow-xs';
+        delBtn.innerHTML = '✕';
+        delBtn.title = '收回家具 (+3❤️)';
+        delBtn.onclick = (ev) => {
+          ev.stopPropagation();
+          const room = getActiveRoom();
+          room.placedFurniture = (room.placedFurniture || []).filter(f => f.id !== furn.id);
+          appState.hearts += 3;
+          saveState();
+          el.remove();
+          updateUI();
+          showToast('♻️ 已收回家具，返還 +3 顆相處愛心！');
+        };
+
+        // 4. 縮放把手 (右下角)
+        const resizeBtn = document.createElement('button');
+        resizeBtn.className = 'handle-btn absolute -bottom-2.5 -right-2.5 w-7 h-7 bg-brand-500 text-white rounded-full flex items-center justify-center text-xs font-bold pointer-events-auto active:scale-90 shadow-xs';
+        resizeBtn.innerHTML = '⤡';
+        resizeBtn.title = '拖曳縮放家具大小';
+        initFurnitureResizeHandle(resizeBtn, furn, el, itemDef);
+
+        handleContainer.appendChild(rotBtn);
+        handleContainer.appendChild(colorBtn);
+        handleContainer.appendChild(delBtn);
+        handleContainer.appendChild(resizeBtn);
+        el.appendChild(handleContainer);
+
+        showToast(`🛠️ 已進入「${furn.name}」編輯模式：可旋轉、換色、縮放或收回`);
+      };
+
+      el.addEventListener('mousedown', onStart);
+      el.addEventListener('touchstart', onStart, { passive: false });
+
+      container.appendChild(el);
+    }
+
+    function initFurnitureRotateHandle(handleEl, furn, furnitureEl) {
+      let isRotating = false;
+      let centerPt = { x: 0, y: 0 };
+
+      const getPos = (e) => {
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return { x: clientX, y: clientY };
+      };
+
+      const startRotate = (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        isRotating = true;
+        const rect = furnitureEl.getBoundingClientRect();
+        centerPt = {
+          x: rect.left + rect.width / 2,
+          y: rect.top + rect.height / 2
+        };
+
+        const moveRotate = (ev) => {
+          if (!isRotating) return;
+          ev.preventDefault();
+          const pt = getPos(ev);
+          const rad = Math.atan2(pt.y - centerPt.y, pt.x - centerPt.x);
+          let deg = Math.round(rad * (180 / Math.PI)) + 135;
+          deg = (deg % 360 + 360) % 360;
+          furn.rotation = deg;
+          furnitureEl.style.transform = `rotate(${deg}deg)`;
+        };
+
+        const stopRotate = () => {
+          if (isRotating) {
+            isRotating = false;
+            saveState();
+          }
+          window.removeEventListener('mousemove', moveRotate);
+          window.removeEventListener('mouseup', stopRotate);
+          window.removeEventListener('touchmove', moveRotate);
+          window.removeEventListener('touchend', stopRotate);
+        };
+
+        window.addEventListener('mousemove', moveRotate);
+        window.addEventListener('mouseup', stopRotate);
+        window.addEventListener('touchmove', moveRotate, { passive: false });
+        window.addEventListener('touchend', stopRotate);
+      };
+
+      handleEl.addEventListener('mousedown', startRotate);
+      handleEl.addEventListener('touchstart', startRotate, { passive: false });
+    }
+
+    function initFurnitureResizeHandle(handleEl, furn, furnitureEl, itemDef) {
+      let isResizing = false;
+      let startX = 0;
+      const baseWidth = itemDef.width;
+      const baseHeight = itemDef.height;
+      const aspectRatio = baseHeight / baseWidth;
+      let currentWidth = furn.width || baseWidth;
+
+      const getPos = (e) => {
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return { x: clientX, y: clientY };
+      };
+
+      const startResize = (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        isResizing = true;
+        const pt = getPos(e);
+        startX = pt.x;
+        currentWidth = furn.width || parseFloat(furnitureEl.style.width) || baseWidth;
+
+        const moveResize = (ev) => {
+          if (!isResizing) return;
+          ev.preventDefault();
+          const pt = getPos(ev);
+          const scale = roomViewport.scale || 1;
+          const delta = ((pt.x - startX) / scale) * 1.5;
+
+          const minW = Math.round(baseWidth * 0.55);
+          const maxW = Math.round(baseWidth * 1.8);
+          const newW = Math.min(Math.max(currentWidth + delta, minW), maxW);
+          const newH = Math.round(newW * aspectRatio);
+
+          furnitureEl.style.width = `${newW}px`;
+          furnitureEl.style.height = `${newH}px`;
+          furn.width = newW;
+          furn.height = newH;
+        };
+
+        const stopResize = () => {
+          if (isResizing) {
+            isResizing = false;
+            saveState();
+          }
+          window.removeEventListener('mousemove', moveResize);
+          window.removeEventListener('mouseup', stopResize);
+          window.removeEventListener('touchmove', moveResize);
+          window.removeEventListener('touchend', stopResize);
+        };
+
+        window.addEventListener('mousemove', moveResize);
+        window.addEventListener('mouseup', stopResize);
+        window.addEventListener('touchmove', moveResize, { passive: false });
+        window.addEventListener('touchend', stopResize);
+      };
+
+      handleEl.addEventListener('mousedown', startResize);
+      handleEl.addEventListener('touchstart', startResize, { passive: false });
+    }
+
+    function createDraggableRoomItem(decor) {
+      const container = document.getElementById('roomWorld');
+      if (!container) return;
+
+      const el = document.createElement('div');
+      el.className = `room-sticker absolute select-none flex flex-col items-center cursor-pointer ${
+        !decor.isRead ? 'unread-memory-glow' : ''
+      }`;
+      el.id = `decor-${decor.id}`;
+      el.style.left = `${decor.x}px`;
+      el.style.top = `${decor.y}px`;
+      el.style.zIndex = '15';
+      el.style.setProperty('--rot', `${decor.rotation || 0}deg`);
+      el.style.transform = `rotate(${decor.rotation || 0}deg)`;
+
+      const isOwner = (decor.creator === 'me');
+      const size = decor.size || 100;
+
+      el.innerHTML = `
+        <div class="relative flex flex-col items-center">
+          <span class="absolute -top-3.5 right-0 text-[9px] font-bold px-1.5 py-0.2 rounded-full shadow-xs ${
+            isOwner ? 'bg-orange-500 text-white' : 'bg-stone-800 text-white'
+          } pointer-events-none z-10">
+            ${isOwner ? '我' : (getActiveRoom().partnerName || '對方')}
+          </span>
+          <img src="${decor.url}" style="width: ${size}px;" class="sticker-img block max-w-none transition-transform pointer-events-none ${
+            decor.hasBorder ? 'sticker-with-border' : 'sticker-no-border'
+          }" alt="${decor.name}">
+          <span class="mt-1 text-[10px] font-bold text-stone-700 bg-white/90 backdrop-blur-xs px-2 py-0.5 rounded-full shadow-xs border border-stone-200/80 pointer-events-none max-w-[120px] truncate">
+            ${decor.name}
+          </span>
+        </div>
+      `;
+
+      let isDragging = false;
+      let startX = 0, startY = 0;
+      let initX = 0, initY = 0;
+      let moved = false;
+      let pressTimer = null;
+      let isEditMode = false;
+
+      const startPress = (e) => {
+        if (e.target.closest('.handle-btn')) return;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        startX = clientX;
+        startY = clientY;
+        initX = parseFloat(el.style.left) || decor.x;
+        initY = parseFloat(el.style.top) || decor.y;
+        moved = false;
+
+        if (isOwner) {
+          clearTimeout(pressTimer);
+          pressTimer = setTimeout(() => {
+            if (!moved) {
+              enableEditMode();
+            }
+          }, 450);
+        }
+
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onEnd);
+        window.addEventListener('touchmove', onMove, { passive: false });
+        window.addEventListener('touchend', onEnd);
+      };
+
+      const onMove = (e) => {
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const dist = Math.hypot(clientX - startX, clientY - startY);
+        if (dist > 8) {
+          moved = true;
+          clearTimeout(pressTimer);
+        }
+
+        if (!isOwner) return;
+
+        if (dist > 8 && !isDragging) {
+          isDragging = true;
+          el.style.zIndex = '30';
+        }
+
+        if (isDragging) {
+          e.preventDefault();
+          const scale = roomViewport.scale || 1;
+          const dx = (clientX - startX) / scale;
+          const dy = (clientY - startY) / scale;
+
+          const newX = Math.min(Math.max(initX + dx, 10), ROOM_WIDTH - (decor.size || 100) - 10);
+          const newY = Math.min(Math.max(initY + dy, 50), ROOM_HEIGHT - (decor.size || 100) - 10);
+
+          el.style.left = `${newX}px`;
+          el.style.top = `${newY}px`;
+        }
+      };
+
+      const onEnd = () => {
+        clearTimeout(pressTimer);
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup', onEnd);
+        window.removeEventListener('touchmove', onMove);
+        window.removeEventListener('touchend', onEnd);
+
+        if (isDragging) {
+          isDragging = false;
+          el.style.zIndex = '15';
+          decor.x = parseFloat(el.style.left) || decor.x;
+          decor.y = parseFloat(el.style.top) || decor.y;
+          saveState();
+        } else if (!moved) {
+          if (!el.classList.contains('sticker-editing-box')) {
+            openMemoryInspection(decor);
+          }
+        }
+      };
+
+      const enableEditMode = () => {
+        document.querySelectorAll('.sticker-editing-box').forEach(b => {
+          b.classList.remove('sticker-editing-box');
+          const h = b.querySelector('.sticker-edit-handles');
+          if (h) h.remove();
+        });
+
+        isEditMode = true;
+        el.classList.add('sticker-editing-box');
+
+        const handleContainer = document.createElement('div');
+        handleContainer.className = 'sticker-edit-handles absolute -inset-3 pointer-events-none z-20';
+
+        const rotBtn = document.createElement('button');
+        rotBtn.className = 'handle-btn absolute -top-2 -left-2 w-7 h-7 bg-white text-stone-800 rounded-full border border-stone-300 flex items-center justify-center text-xs font-bold pointer-events-auto active:scale-90';
+        rotBtn.innerHTML = '↻';
+        rotBtn.title = '拖曳旋轉角度';
+        initRotateHandle(rotBtn, decor, el);
+
+        const borderBtn = document.createElement('button');
+        borderBtn.className = 'handle-btn absolute -top-3.5 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-stone-900 text-white rounded-full text-[9px] font-bold pointer-events-auto active:scale-95 shadow-xs';
+        borderBtn.innerText = decor.hasBorder ? '✨ 白邊' : '純淨裁切';
+        borderBtn.onclick = (ev) => {
+          ev.stopPropagation();
+          decor.hasBorder = !decor.hasBorder;
+          const img = el.querySelector('.sticker-img');
+          if (img) {
+            img.className = `sticker-img block max-w-none transition-transform pointer-events-none ${
+              decor.hasBorder ? 'sticker-with-border' : 'sticker-no-border'
+            }`;
+          }
+          borderBtn.innerText = decor.hasBorder ? '✨ 白邊' : '純淨裁切';
+          saveState();
+          showToast(decor.hasBorder ? '已切換為：立體白邊' : '已切換為：純淨無痕裁切');
+        };
+
+        const resizeBtn = document.createElement('button');
+        resizeBtn.className = 'handle-btn absolute -bottom-2 -right-2 w-7 h-7 bg-brand-500 text-white rounded-full flex items-center justify-center text-xs font-bold pointer-events-auto active:scale-90 shadow-xs';
+        resizeBtn.innerHTML = '⤡';
+        resizeBtn.title = '拖曳縮放大小';
+        const imgElement = el.querySelector('.sticker-img');
+        initResizeHandle(resizeBtn, decor, el, imgElement);
+
+        handleContainer.appendChild(rotBtn);
+        handleContainer.appendChild(borderBtn);
+        handleContainer.appendChild(resizeBtn);
+        el.appendChild(handleContainer);
+
+        showToast('🛠️ 已進入編輯模式：可旋轉、縮放或切換白邊');
+      };
+
+      el.addEventListener('mousedown', startPress);
+      el.addEventListener('touchstart', startPress, { passive: false });
+
+      container.appendChild(el);
+    }
+
+    function initRotateHandle(handleEl, decor, stickerEl) {
+      let isRotating = false;
+      let centerPt = { x: 0, y: 0 };
+
+      const getPos = (e) => {
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return { x: clientX, y: clientY };
+      };
+
+      const startRotate = (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        isRotating = true;
+        const rect = stickerEl.getBoundingClientRect();
+        centerPt = {
+          x: rect.left + rect.width / 2,
+          y: rect.top + rect.height / 2
+        };
+
+        const moveRotate = (ev) => {
+          if (!isRotating) return;
+          ev.preventDefault();
+          const pt = getPos(ev);
+          const rad = Math.atan2(pt.y - centerPt.y, pt.x - centerPt.x);
+          let deg = Math.round(rad * (180 / Math.PI)) + 135;
+          deg = (deg % 360 + 360) % 360;
+          decor.rotation = deg;
+          stickerEl.style.setProperty('--rot', `${deg}deg`);
+          stickerEl.style.transform = `rotate(${deg}deg)`;
+        };
+
+        const stopRotate = () => {
+          if (isRotating) {
+            isRotating = false;
+            saveState();
+          }
+          window.removeEventListener('mousemove', moveRotate);
+          window.removeEventListener('mouseup', stopRotate);
+          window.removeEventListener('touchmove', moveRotate);
+          window.removeEventListener('touchend', stopRotate);
+        };
+
+        window.addEventListener('mousemove', moveRotate);
+        window.addEventListener('mouseup', stopRotate);
+        window.addEventListener('touchmove', moveRotate, { passive: false });
+        window.addEventListener('touchend', stopRotate);
+      };
+
+      handleEl.addEventListener('mousedown', startRotate);
+      handleEl.addEventListener('touchstart', startRotate, { passive: false });
+    }
+
+    function initResizeHandle(handleEl, decor, stickerEl, imgEl) {
+      let isResizing = false;
+      let startX = 0;
+      let startWidth = 96;
+
+      const getPos = (e) => {
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return { x: clientX, y: clientY };
+      };
+
+      const startResize = (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        isResizing = true;
+        const pt = getPos(e);
+        startX = pt.x;
+        startWidth = parseFloat(imgEl.style.width) || decor.size || 96;
+
+        const moveResize = (ev) => {
+          if (!isResizing) return;
+          ev.preventDefault();
+          const pt = getPos(ev);
+          const delta = (pt.x - startX) * 1.5;
+          const newWidth = Math.min(Math.max(startWidth + delta, 60), 220);
+          imgEl.style.width = `${newWidth}px`;
+          decor.size = Math.round(newWidth);
+        };
+
+        const stopResize = () => {
+          if (isResizing) {
+            isResizing = false;
+            saveState();
+          }
+          window.removeEventListener('mousemove', moveResize);
+          window.removeEventListener('mouseup', stopResize);
+          window.removeEventListener('touchmove', moveResize);
+          window.removeEventListener('touchend', stopResize);
+        };
+
+        window.addEventListener('mousemove', moveResize);
+        window.addEventListener('mouseup', stopResize);
+        window.addEventListener('touchmove', moveResize, { passive: false });
+        window.addEventListener('touchend', stopResize);
+      };
+
+      handleEl.addEventListener('mousedown', startResize);
+      handleEl.addEventListener('touchstart', startResize, { passive: false });
+    }
+
+    // Deselect edit boxes when clicking empty room background
+    document.addEventListener('pointerdown', (e) => {
+      if (!e.target.closest('.room-sticker') && !e.target.closest('.room-furniture')) {
+        document.querySelectorAll('.sticker-editing-box').forEach(box => {
+          box.classList.remove('sticker-editing-box');
+          const h = box.querySelector('.sticker-edit-handles');
+          if (h) h.remove();
+        });
+      }
+    });
+
+    // ==========================================
+    // 11. MEMORY INSPECTION & SCREENSHOT
+    // ==========================================
+    function openMemoryInspection(decor) {
+      inspectedItemId = decor.id;
+      decor.isRead = true;
+      saveState();
+      const el = document.getElementById(`decor-${decor.id}`);
+      if (el) el.classList.remove('unread-memory-glow');
+
+      const modal = document.getElementById('memoryInspectModal');
+      const img = document.getElementById('inspectImg');
+      const title = document.getElementById('inspectTitle');
+      const authorBadge = document.getElementById('inspectAuthorBadge');
+      const date = document.getElementById('inspectDate');
+      const diary = document.getElementById('inspectDiary');
+      const ownerControls = document.getElementById('inspectOwnerControls');
+      const nonOwnerNotice = document.getElementById('inspectNonOwnerNotice');
+
+      img.src = decor.originalPhoto || decor.url;
+      title.innerText = decor.name || '美好回憶';
+      date.innerText = decor.date || '未設定日期';
+      diary.innerText = decor.diary || '這段回憶沒有文字日記，但依舊閃閃發亮。';
+
+      const isMe = (decor.creator === 'me');
+      if (isMe) {
+        authorBadge.innerText = '我佈置的';
+        authorBadge.className = 'text-[11px] font-semibold px-2 py-0.5 rounded-full bg-orange-100 text-orange-700';
+        ownerControls.classList.remove('hidden');
+        nonOwnerNotice.classList.add('hidden');
+      } else {
+        authorBadge.innerText = `${getActiveRoom().partnerName || '對方'} 佈置的`;
+        authorBadge.className = 'text-[11px] font-semibold px-2 py-0.5 rounded-full bg-stone-200 text-stone-700';
+        ownerControls.classList.add('hidden');
+        nonOwnerNotice.classList.remove('hidden');
+      }
+
+      renderInspectComments(decor);
+      modal.classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeMemoryInspect() {
+      const modal = document.getElementById('memoryInspectModal');
+      if (modal) modal.classList.add('hidden');
+      inspectedItemId = null;
+    }
+
+    function captureAndShareRoom() {
+      const roomWorld = document.getElementById('roomWorld');
+      const activeRoom = getActiveRoom();
+      showToast('📸 正在捕捉小窩精緻畫面...');
+
+      let minX = 80;
+      let maxX = ROOM_WIDTH - 80;
+      let minY = 60;
+      let maxY = ROOM_HEIGHT - 60;
+
+      const allObjects = [...activeRoom.placedDecorations, ...(activeRoom.placedFurniture || [])];
+      if (allObjects.length > 0) {
+        let itemsMinX = 9999, itemsMaxX = 0, itemsMinY = 9999, itemsMaxY = 0;
+        allObjects.forEach(obj => {
+          const w = obj.width || obj.size || 100;
+          const h = obj.height || obj.size || 100;
+          if (obj.x < itemsMinX) itemsMinX = obj.x;
+          if (obj.x + w > itemsMaxX) itemsMaxX = obj.x + w;
+          if (obj.y < itemsMinY) itemsMinY = obj.y;
+          if (obj.y + h > itemsMaxY) itemsMaxY = obj.y + h;
+        });
+
+        itemsMinX = Math.min(itemsMinX, 100);
+        itemsMaxX = Math.max(itemsMaxX, ROOM_WIDTH - 200);
+        itemsMinY = Math.min(itemsMinY, 60);
+        itemsMaxY = Math.max(itemsMaxY, ROOM_HEIGHT - 100);
+
+        minX = Math.max(0, itemsMinX - 50);
+        maxX = Math.min(ROOM_WIDTH, itemsMaxX + 50);
+        minY = Math.max(0, itemsMinY - 40);
+        maxY = Math.min(ROOM_HEIGHT, itemsMaxY + 40);
+      }
+
+      const cropWidth = maxX - minX;
+      const cropHeight = maxY - minY;
+
+      if (typeof html2canvas !== 'undefined' && roomWorld) {
+        html2canvas(roomWorld, {
+          useCORS: true,
+          allowTaint: true,
+          scale: 1.5,
+          width: ROOM_WIDTH,
+          height: ROOM_HEIGHT,
+          backgroundColor: null,
+          logging: false
+        }).then(fullCanvas => {
+          const croppedCanvas = document.createElement('canvas');
+          croppedCanvas.width = cropWidth * 1.5;
+          croppedCanvas.height = cropHeight * 1.5;
+          const cCtx = croppedCanvas.getContext('2d');
+
+          cCtx.drawImage(
+            fullCanvas,
+            minX * 1.5, minY * 1.5, cropWidth * 1.5, cropHeight * 1.5,
+            0, 0, cropWidth * 1.5, cropHeight * 1.5
+          );
+
+          renderTightRoomSnapshot(croppedCanvas, activeRoom);
+        }).catch(() => {
+          generateFallbackRoomCanvas(activeRoom, minX, minY, cropWidth, cropHeight);
+        });
+      } else {
+        generateFallbackRoomCanvas(activeRoom, minX, minY, cropWidth, cropHeight);
+      }
+    }
+
+    function renderTightRoomSnapshot(sourceCanvas, activeRoom) {
+      const finalCanvas = document.createElement('canvas');
+      const ctx = finalCanvas.getContext('2d');
+      finalCanvas.width = sourceCanvas.width;
+      finalCanvas.height = sourceCanvas.height;
+
+      ctx.drawImage(sourceCanvas, 0, 0);
+
+      ctx.save();
+      const badgeW = 260;
+      const badgeH = 50;
+      const bx = finalCanvas.width - badgeW - 20;
+      const by = finalCanvas.height - badgeH - 20;
+
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+      ctx.beginPath();
+      ctx.roundRect(bx, by, badgeW, badgeH, 12);
+      ctx.fill();
+
+      ctx.fillStyle = '#1c1917';
+      ctx.font = 'bold 16px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+      ctx.fillText(`🏡 ${activeRoom.name}`, bx + 14, by + 24);
+
+      ctx.fillStyle = '#78716c';
+      ctx.font = '11px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+      const dateStr = new Date().toISOString().split('T')[0];
+      ctx.fillText(`步伴 CozyStep • ${dateStr}`, bx + 14, by + 40);
+      ctx.restore();
+
+      currentScreenshotDataUrl = finalCanvas.toDataURL('image/png');
+      document.getElementById('screenshotPreviewImg').src = currentScreenshotDataUrl;
+      document.getElementById('screenshotModal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function generateFallbackRoomCanvas(activeRoom, minX = 0, minY = 0, cropW = ROOM_WIDTH, cropH = ROOM_HEIGHT) {
+      const canvas = document.createElement('canvas');
+      canvas.width = cropW;
+      canvas.height = cropH;
+      const ctx = canvas.getContext('2d');
+
+      const theme = activeRoom.decorTheme || {};
+      ctx.fillStyle = theme.wallBg || '#f8f5f0';
+      ctx.fillRect(0, 0, cropW, cropH);
+
+      renderTightRoomSnapshot(canvas, activeRoom);
+    }
+
+    function closeScreenshotModal() {
+      document.getElementById('screenshotModal').classList.add('hidden');
+    }
+
+    function downloadScreenshotImage() {
+      if (!currentScreenshotDataUrl) return;
+      const link = document.createElement('a');
+      link.download = `CozyStep_全景小窩_${Date.now()}.png`;
+      link.href = currentScreenshotDataUrl;
+      link.click();
+      showToast('💾 全景照片已儲存');
+    }
+
+    function shareScreenshotNative() {
+      if (!currentScreenshotDataUrl) return;
+      if (navigator.share) {
+        fetch(currentScreenshotDataUrl)
+          .then(res => res.blob())
+          .then(blob => {
+            const file = new File([blob], 'cozystep-room.png', { type: 'image/png' });
+            navigator.share({
+              title: '我們的 CozyStep 小窩全景',
+              files: [file]
+            }).catch(() => {
+              downloadScreenshotImage();
+            });
+          });
+      } else {
+        downloadScreenshotImage();
+        showToast('已為您下載圖片，可直接傳送給對方！');
+      }
+    }
+
+    // ==========================================
+    // 12. COMMENTS & DIARY ACTIONS
+    // ==========================================
+    function renderInspectComments(item) {
+      const container = document.getElementById('inspectCommentList');
+      const countEl = document.getElementById('inspectCommentCount');
+      if (!container) return;
+
+      if (!item.comments) item.comments = [];
+      if (countEl) countEl.innerText = item.comments.length;
+
+      container.innerHTML = '';
+      if (item.comments.length === 0) {
+        container.innerHTML = '<div class="text-[11px] text-stone-400 text-center py-2">還沒有留言，快來留下第一句悄悄話吧！</div>';
+        return;
+      }
+
+      item.comments.forEach(c => {
+        const bubble = document.createElement('div');
+        const isMe = (c.author === 'me');
+        bubble.className = `p-2 rounded-xl text-xs space-y-0.5 ${
+          isMe ? 'bg-stone-100 text-stone-800 ml-4' : 'bg-stone-50 border border-stone-200 text-stone-700 mr-4'
+        }`;
+        bubble.innerHTML = `
+          <div class="flex items-center justify-between text-[10px] text-stone-400">
+            <span class="font-bold ${isMe ? 'text-stone-700' : 'text-stone-500'}">${isMe ? '我' : (getActiveRoom().partnerName || '對方')}</span>
+            <span>${c.time || ''}</span>
+          </div>
+          <div class="text-xs break-words">${c.text}</div>
+        `;
+        container.appendChild(bubble);
+      });
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function submitMemoryComment() {
+      if (!inspectedItemId) return;
+      const input = document.getElementById('inspectNewCommentInput');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const room = getActiveRoom();
+      const item = room.placedDecorations.find(d => d.id === inspectedItemId);
+      if (!item) return;
+
+      if (!item.comments) item.comments = [];
+      const now = new Date();
+      const timeStr = `${now.getMonth() + 1}/${now.getDate()} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+      item.comments.push({
+        id: 'cmt_' + Date.now(),
+        author: 'me',
+        text: text,
+        time: timeStr
+      });
+
+      saveState();
+      input.value = '';
+      renderInspectComments(item);
+      showToast('💌 留言已送出！');
+    }
+
+    function deleteInspectedObject() {
+      if (!inspectedItemId) return;
+      const room = getActiveRoom();
+      const idx = room.placedDecorations.findIndex(d => d.id === inspectedItemId);
+      if (idx === -1) return;
+
+      const item = room.placedDecorations[idx];
+      if (item.creator !== 'me') {
+        showToast('只能收回自己佈置的物件哦！');
+        return;
+      }
+
+      room.placedDecorations.splice(idx, 1);
+      appState.hearts += RECYCLE_HEART_REWARD;
+      saveState();
+      closeMemoryInspect();
+      restoreRoomItems();
+      updateUI();
+      showToast(`♻️ 已收回物件，並回收 +${RECYCLE_HEART_REWARD} 顆相處愛心！`);
+    }
+
+    // ==========================================
+    // 13. SHARED ROOM DATA SYNC & MERGE (共享同一個小窩)
+    // ==========================================
+    function openSyncDataModal() {
+      const room = getActiveRoom();
+      document.getElementById('syncModalRoomName').innerText = room.name;
+      document.getElementById('currentRoomShareId').value = room.id;
+      document.getElementById('syncDataModal').classList.remove('hidden');
+    }
+
+    function closeSyncDataModal() {
+      document.getElementById('syncDataModal').classList.add('hidden');
+    }
+
+    function copyCurrentRoomShareId() {
+      const codeInput = document.getElementById("currentRoomShareId");
+      codeInput.select();
+      codeInput.setSelectionRange(0, 99999);
+      document.execCommand("copy");
+      showToast(`📋 已複製小窩邀請碼：${codeInput.value}`);
+    }
+
+    function exportAndCopySyncPayload() {
+      const room = getActiveRoom();
+      const payload = {
+        roomId: room.id,
+        roomName: room.name,
+        senderCode: appState.myCode,
+        decorations: room.placedDecorations,
+        decorTheme: room.decorTheme || {}
+      };
+
+      const jsonStr = JSON.stringify(payload);
+      const encoded = btoa(unescape(encodeURIComponent(jsonStr)));
+
+      const dummy = document.createElement("textarea");
+      document.body.appendChild(dummy);
+      dummy.value = encoded;
+      dummy.select();
+      document.execCommand("copy");
+      document.body.removeChild(dummy);
+
+      showToast(`📋 已複製「${room.name}」的最新佈置代碼！發送給對方合併`);
+    }
+
+    function importPartnerSyncPayload() {
+      const codeInput = document.getElementById('importPayloadInput').value.trim();
+      if (!codeInput) {
+        showToast("請貼上對方分享的同步碼");
+        return;
+      }
+
+      try {
+        const decodedStr = decodeURIComponent(escape(atob(codeInput)));
+        const data = JSON.parse(decodedStr);
+
+        if (!data.decorations || !Array.isArray(data.decorations)) {
+          throw new Error("Invalid payload format");
+        }
+
+        const room = getActiveRoom();
+        let newCount = 0;
+        data.decorations.forEach(incoming => {
+          const exists = room.placedDecorations.some(local => local.id === incoming.id);
+          if (!exists) {
+            incoming.creator = 'partner';
+            room.placedDecorations.push(incoming);
+            newCount++;
+          }
+        });
+
+        if (data.decorTheme) {
+          room.decorTheme = Object.assign(room.decorTheme || {}, data.decorTheme);
+        }
+
+        saveState();
+        restoreRoomItems();
+        applyRoomBackgrounds();
+        updateUI();
+        closeSyncDataModal();
+        showToast(`🎉 成功同步！匯入了 ${newCount} 個新擺飾至同一個小窩！`);
+      } catch (err) {
+        showToast("❌ 同步碼格式錯誤或已損毀");
+      }
+    }
+  </script>
+</body>
+</html>
