@@ -1,18 +1,24 @@
 {
-"id": "/cozystep-v3-reset",
-"name": "步伴 CozyStep",
-"short_name": "步伴",
-"start_url": "./index.html",
-"scope": "./",
-"display": "standalone",
-"background_color": "#f8f5f0",
-"theme_color": "#fb923c",
-"icons": [
-{
-"src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='128' fill='%23fb923c'/%3E%3Cellipse cx='256' cy='310' rx='95' ry='75' fill='%23ffffff'/%3E%3Cellipse cx='165' cy='200' rx='32' ry='44' transform='rotate(-18 165 200)' fill='%23ffffff'/%3E%3Cellipse cx='225' cy='165' rx='34' ry='46' transform='rotate(-6 225 165)' fill='%23ffffff'/%3E%3Cellipse cx='287' cy='165' rx='34' ry='46' transform='rotate(6 287 165)' fill='%23ffffff'/%3E%3Cellipse cx='347' cy='200' rx='32' ry='44' transform='rotate(18 347 200)' fill='%23ffffff'/%3E%3C/svg%3E",
-"sizes": "512x512",
-"type": "image/svg+xml",
-"purpose": "any maskable"
-}
-]
+  "id": "/co-step/",
+  "name": "CozyStep",
+  "short_name": "CozyStep",
+  "start_url": "/co-step/",
+  "scope": "/co-step/",
+  "display": "standalone",
+  "background_color": "#f8f5f0",
+  "theme_color": "#fb923c",
+  "icons": [
+    {
+      "src": "/co-step/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/co-step/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
 }
