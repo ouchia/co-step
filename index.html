@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>步伴 CozyStep - 雙人散步與小窩培育</title>
+  <link rel="manifest" href="./manifest.json">
 
-  <!-- App installation metadata -->
-  <link rel="manifest" href="/co-step/manifest.json">
+  <!-- PWA：實際安裝設定由同目錄 manifest.json 提供 -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -16,7 +16,7 @@
 
   <!-- 高解析度 App 向量/PNG 圖示 (內嵌 Base64，確保 Pixel 桌面捷徑圖示完整呈現) -->
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='128' fill='%23fb923c'/%3E%3Cellipse cx='256' cy='310' rx='95' ry='75' fill='%23ffffff'/%3E%3Cellipse cx='165' cy='200' rx='32' ry='44' transform='rotate(-18 165 200)' fill='%23ffffff'/%3E%3Cellipse cx='225' cy='165' rx='34' ry='46' transform='rotate(-6 225 165)' fill='%23ffffff'/%3E%3Cellipse cx='287' cy='165' rx='34' ry='46' transform='rotate(6 287 165)' fill='%23ffffff'/%3E%3Cellipse cx='347' cy='200' rx='32' ry='44' transform='rotate(18 347 200)' fill='%23ffffff'/%3E%3C/svg%3E">
-  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='128' fill='%23fb923c'/%3E%3Cellipse cx='256' cy='310' rx='95' ry='75' fill='%23ffffff'/%3E%3Cellipse cx='165' cy='200' rx='32' ry='44' transform='rotate(-18 165 200)' fill='%23ffffff'/%3E%3Cellipse cx='225' cy='165' rx='34' ry='46' transform='rotate(-6 225 165)' fill='%23ffffff'/%3E%3Cellipse cx='287' cy='165' rx='34' ry='46' transform='rotate(6 287 165)' fill='%23ffffff'/%3E%3Cellipse cx='347' cy='200' rx='32' ry='44' transform='rotate(18 347 200)' fill='%23ffffff'/%3E%3C/svg%3E">
+  <link rel="apple-touch-icon" sizes="192x192" href="./icons/icon-192.png">
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -3321,6 +3321,16 @@
       } catch (err) {
         showToast("❌ 同步碼格式錯誤或已損毀");
       }
+    }
+  </script>
+
+  <!-- PWA：使用相對路徑，支援不同 GitHub Repository 子目錄。 -->
+  <script>
+    if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js', { scope: './', updateViaCache: 'none' })
+          .catch(error => console.warn('PWA service worker registration failed:', error));
+      });
     }
   </script>
 </body>
